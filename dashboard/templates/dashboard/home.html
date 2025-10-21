@@ -1,0 +1,60 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-2 bg-dark text-light vh-100 p-3">
+      <h4 class="text-center text-primary">Hub</h4>
+      <ul class="nav flex-column mt-4">
+        <li class="nav-item"><a href="#" class="nav-link text-light">🏠 Dashboard</a></li>
+        <li class="nav-item"><a href="#" class="nav-link text-light">🎯 Goals</a></li>
+        <li class="nav-item"><a href="#" class="nav-link text-light">📝 Notes</a></li>
+        <li class="nav-item"><a href="#" class="nav-link text-light">✅ Tasks</a></li>
+        <li class="nav-item"><a href="#" class="nav-link text-light">📅 Calendar</a></li>
+      </ul>
+    </div>
+
+    <!-- Main content -->
+    <div class="col-md-10 bg-white">
+      <div class="p-4">
+        <h3 class="text-dark">Welcome back, {{ request.user.username|default:'Guest' }} 👋</h3>
+        <hr>
+
+        <!-- Goals section -->
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Today's Goals</h5>
+            <ul class="list-group">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                Drink 8 glasses of water
+                <input type="checkbox" class="form-check-input">
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                Read 20 pages
+                <input type="checkbox" class="form-check-input">
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                Walk 5000 steps
+                <input type="checkbox" class="form-check-input">
+              </li>
+            </ul>
+          </div>
+
+          <!-- Chart section -->
+          <div class="col-md-6">
+            <h5>Your Progress</h5>
+            <canvas id="progressChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Motivational banner -->
+        <div class="mt-4 bg-primary text-white text-center p-2 rounded">
+          <marquee>Keep pushing forward 💪 | You’re doing great! | Progress, not perfection.</marquee>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
