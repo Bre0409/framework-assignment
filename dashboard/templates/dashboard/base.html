@@ -1,28 +1,52 @@
-{% load static %}
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Productivity Hub</title>
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
-
+  <title>{% block title %}Dashboard{% endblock %}</title>
+  {% load static %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body class="bg-light">
-    
-  {% block content %}
-  {% endblock %}
+<body>
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <div class="sidebar d-flex flex-column">
+      <div class="text-center mb-4">
+        <img src="{% static 'img/user.png' %}" class="rounded-circle mb-2" width="60" height="60" alt="User">
+        <h5>User</h5>
+      </div>
+      <nav class="nav flex-column">
+        <a class="nav-link active" href="#">🏠 Dashboard</a>
+        <a class="nav-link" href="#">📝 Tasks</a>
+        <a class="nav-link" href="#">📓 Notes</a>
+        <a class="nav-link" href="#">🎯 Goals</a>
+        <a class="nav-link" href="#">📅 Events</a>
+      </nav>
+    </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Custom JS -->
+    <!-- Main Content -->
+    <div class="main-content flex-grow-1">
+      <!-- Top Bar -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Dashboard</h2>
+        <div class="d-flex align-items-center gap-3">
+          <span id="currentDate" class="text-muted"></span>
+          <button id="themeToggle" class="btn btn-outline-light btn-sm">🌙</button>
+          <button class="btn btn-outline-danger btn-sm">Logout</button>
+        </div>
+      </div>
 
-  <script src="{% static 'dashboard/js/main.js' %}"></script>
+      {% block content %}{% endblock %}
+    </div>
+  </div>
 
+  <!-- Motivation Banner -->
+  <div id="motivationBanner" class="motivation-banner">
+    Keep pushing forward — your consistency is paying off! 💪
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

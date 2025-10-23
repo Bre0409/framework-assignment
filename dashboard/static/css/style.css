@@ -1,0 +1,209 @@
+/* ----------------------------- */
+/* BASE STYLES */
+/* ----------------------------- */
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #0e1217;
+  color: #e6f1ff;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* ----------------------------- */
+/* SIDEBAR */
+/* ----------------------------- */
+.sidebar {
+  height: 100vh;
+  background-color: #121820;
+  color: #e6f1ff;
+  padding: 20px;
+  width: 220px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+}
+
+.sidebar .nav-link {
+  color: #cfd8dc;
+  margin-bottom: 10px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  color: #00b4ff;
+  transform: translateX(5px);
+}
+
+.sidebar h5 {
+  color: #00b4ff;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+/* ----------------------------- */
+/* MAIN CONTENT */
+/* ----------------------------- */
+.main-content {
+  margin-left: 240px;
+  padding: 40px;
+  transition: all 0.3s ease;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+}
+
+/* Cards */
+.card {
+  background-color: #1b2130;
+  border: none;
+  border-radius: 12px;
+  color: #e6f1ff;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  padding: 20px;
+}
+
+.card h5 {
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* ----------------------------- */
+/* BUTTONS */
+/* ----------------------------- */
+.btn-primary {
+  background-color: #00b4ff;
+  border: none;
+  color: #fff;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #0090cc;
+}
+
+.btn-outline-light {
+  border-color: #00b4ff;
+  color: #00b4ff;
+}
+
+.btn-outline-light:hover {
+  background-color: #00b4ff;
+  color: #0e1217;
+}
+
+/* ----------------------------- */
+/* PROGRESS RINGS */
+/* ----------------------------- */
+.progress-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.progress-ring svg {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: #2c3547;
+  stroke-width: 6;
+}
+
+.progress-ring-fill {
+  fill: none;
+  stroke: #00b4ff;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 188.4; /* 2 * π * r */
+  stroke-dashoffset: 188.4;
+  transition: stroke-dashoffset 1s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* ----------------------------- */
+/* MOTIVATION BANNER */
+/* ----------------------------- */
+.motivation-banner {
+  position: fixed;
+  bottom: 0;
+  left: 240px;
+  right: 0;
+  background-color: #00b4ff;
+  color: #fff;
+  text-align: center;
+  padding: 12px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ----------------------------- */
+/* LIGHT MODE */
+/* ----------------------------- */
+body.light-mode {
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+body.light-mode .sidebar {
+  background-color: #ffffff;
+  color: #212529;
+}
+
+body.light-mode .card {
+  background-color: #ffffff;
+  color: #212529;
+}
+
+body.light-mode .btn-outline-light {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+body.light-mode .btn-outline-light:hover {
+  background-color: #007bff;
+  color: #ffffff;
+}
+
+body.light-mode .motivation-banner {
+  background-color: #007bff;
+}
+
+/* ----------------------------- */
+/* RESPONSIVE */
+/* ----------------------------- */
+@media (max-width: 768px) {
+  .sidebar {
+    position: relative;
+    height: auto;
+    width: 100%;
+  }
+  .main-content {
+    margin-left: 0;
+  }
+  .motivation-banner {
+    left: 0;
+  }
+}

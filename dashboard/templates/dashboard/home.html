@@ -1,60 +1,41 @@
 {% extends 'dashboard/base.html' %}
-{% load static %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-  <div class="row">
-    <!-- Sidebar -->
-    <div class="col-md-2 bg-dark text-light vh-100 p-3">
-      <h4 class="text-center text-primary">Hub</h4>
-      <ul class="nav flex-column mt-4">
-        <li class="nav-item"><a href="#" class="nav-link text-light">🏠 Dashboard</a></li>
-        <li class="nav-item"><a href="#" class="nav-link text-light">🎯 Goals</a></li>
-        <li class="nav-item"><a href="#" class="nav-link text-light">📝 Notes</a></li>
-        <li class="nav-item"><a href="#" class="nav-link text-light">✅ Tasks</a></li>
-        <li class="nav-item"><a href="#" class="nav-link text-light">📅 Calendar</a></li>
-      </ul>
-    </div>
+<div class="dashboard-grid">
+  <!-- Tasks -->
+  <div class="card shadow-sm p-3">
+    <h5 class="fw-bold mb-3">Tasks</h5>
+    <ul class="list-group goal-list">
+      <li class="list-group-item"><input type="checkbox"> Workout</li>
+      <li class="list-group-item"><input type="checkbox"> Read book</li>
+      <li class="list-group-item"><input type="checkbox" checked> Finish project</li>
+      <li class="list-group-item"><input type="checkbox" checked> Email John</li>
+    </ul>
+    <button class="btn btn-primary mt-3 w-100">Add Task</button>
+  </div>
 
-    <!-- Main content -->
-    <div class="col-md-10 bg-white">
-      <div class="p-4">
-        <h3 class="text-dark">Welcome back, {{ request.user.username|default:'Guest' }} 👋</h3>
-        <hr>
+  <!-- Notes -->
+  <div class="card shadow-sm p-3">
+    <h5 class="fw-bold mb-3">Notes</h5>
+    <textarea class="form-control mb-3" placeholder="Remember to call mom"></textarea>
+    <button class="btn btn-primary w-100">Add Note</button>
+  </div>
 
-        <!-- Goals section -->
-        <div class="row">
-          <div class="col-md-6">
-            <h5>Today's Goals</h5>
-            <ul class="list-group">
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                Drink 8 glasses of water
-                <input type="checkbox" class="form-check-input">
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                Read 20 pages
-                <input type="checkbox" class="form-check-input">
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                Walk 5000 steps
-                <input type="checkbox" class="form-check-input">
-              </li>
-            </ul>
-          </div>
+  <!-- Habits -->
+  <div class="card shadow-sm p-3">
+    <h5 class="fw-bold mb-3">Habits</h5>
+    <ul class="list-group goal-list">
+      <li class="list-group-item">✅ Drink water</li>
+      <li class="list-group-item">✅ Jogging</li>
+      <li class="list-group-item">⭕ Read</li>
+    </ul>
+  </div>
 
-          <!-- Chart section -->
-          <div class="col-md-6">
-            <h5>Your Progress</h5>
-            <canvas id="progressChart"></canvas>
-          </div>
-        </div>
-
-        <!-- Motivational banner -->
-        <div class="mt-4 bg-primary text-white text-center p-2 rounded">
-          <marquee>Keep pushing forward 💪 | You’re doing great! | Progress, not perfection.</marquee>
-        </div>
-      </div>
-    </div>
+  <!-- Progress -->
+  <div class="card shadow-sm p-3">
+    <h5 class="fw-bold mb-3">Progress</h5>
+    <canvas id="progressChart" width="300" height="200"></canvas>
   </div>
 </div>
 {% endblock %}
