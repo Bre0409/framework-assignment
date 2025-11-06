@@ -1,41 +1,93 @@
 {% extends 'dashboard/base.html' %}
-{% block title %}Dashboard{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="dashboard-grid">
-  <!-- Tasks -->
-  <div class="card shadow-sm p-3">
-    <h5 class="fw-bold mb-3">Tasks</h5>
-    <ul class="list-group goal-list">
-      <li class="list-group-item"><input type="checkbox"> Workout</li>
-      <li class="list-group-item"><input type="checkbox"> Read book</li>
-      <li class="list-group-item"><input type="checkbox" checked> Finish project</li>
-      <li class="list-group-item"><input type="checkbox" checked> Email John</li>
-    </ul>
-    <button class="btn btn-primary mt-3 w-100">Add Task</button>
-  </div>
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-  <!-- Notes -->
-  <div class="card shadow-sm p-3">
-    <h5 class="fw-bold mb-3">Notes</h5>
-    <textarea class="form-control mb-3" placeholder="Remember to call mom"></textarea>
-    <button class="btn btn-primary w-100">Add Note</button>
-  </div>
+<div class="container-fluid mt-4">
+  <div class="row g-4">
 
-  <!-- Habits -->
-  <div class="card shadow-sm p-3">
-    <h5 class="fw-bold mb-3">Habits</h5>
-    <ul class="list-group goal-list">
-      <li class="list-group-item">✅ Drink water</li>
-      <li class="list-group-item">✅ Jogging</li>
-      <li class="list-group-item">⭕ Read</li>
-    </ul>
-  </div>
+    <!-- ✅ TASKS -->
+    <div class="col-md-6">
+      <div class="card bg-dark text-light p-4 rounded-4 shadow-lg h-100">
+        <h4 class="fw-semibold mb-3">Tasks</h4>
+        <ul class="list-group list-group-flush">
+          {% for task in top_tasks %}
+          <li class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between align-items-center">
+            <div>
+              <input type="checkbox" class="form-check-input me-2" {% if task.completed %}checked{% endif %}>
+              {{ task.title }}
+            </div>
+            {% if task.completed %}
+            <span class="badge bg-success">Done</span>
+            {% else %}
+            <span class="badge bg-warning text-dark">Pending</span>
+            {% endif %}
+          </li>
+          {% empty %}
+          <li class="list-group-item bg-transparent text-muted text-center">
+            No tasks yet — add some from the Tasks page.
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
 
-  <!-- Progress -->
-  <div class="card shadow-sm p-3">
-    <h5 class="fw-bold mb-3">Progress</h5>
-    <canvas id="progressChart" width="300" height="200"></canvas>
+    <!-- 📝 NOTES SECTION -->
+    <div class="col-md-6">
+      <div class="card bg-dark text-light p-4 rounded-4 shadow-lg h-100">
+        <h4 class="fw-semibold mb-3">Notes</h4>
+        <div id="notesSection">
+          <ul id="notesList" class="list-group list-group-flush mb-3">
+            <li class="list-group-item bg-transparent text-light border-secondary">
+              <input
+                type="text"
+                class="form-control bg-secondary text-light"
+                placeholder="Add a new note..."
+                id="noteInput"
+              >
+            </li>
+          </ul>
+          <button class="btn btn-outline-light w-100" id="addNoteBtn">Add Note</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🎯 GOALS / HABITS -->
+    <div class="col-md-6">
+      <div class="card bg-dark text-light p-4 rounded-4 shadow-lg h-100">
+        <h4 class="fw-semibold mb-3">Goals</h4>
+
+        <div class="goal-list">
+          {% for goal in top_goals %}
+          <div class="goal-item d-flex justify-content-between align-items-center">
+            <div class="goal-info">
+              <p class="mb-0 fw-semibold">{{ goal.title }}</p>
+            </div>
+            <div class="progress-ring small" data-value="{{ goal.progress }}">
+              <svg width="35" height="35">
+                <circle class="progress-ring-bg" cx="17.5" cy="17.5" r="15" />
+                <circle class="progress-ring-fill" cx="17.5" cy="17.5" r="15" />
+              </svg>
+              <div class="progress-ring-text">{{ goal.progress }}%</div>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted">No goals added yet — start building your habits!</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 📊 WEEKLY PROGRESS -->
+    <div class="col-md-6">
+      <div class="card bg-dark text-light p-4 rounded-4 shadow-lg h-100">
+        <h4 class="fw-semibold mb-3">Weekly Progress</h4>
+        {% comment %} <canvas id="progressChart" height="150"></canvas> {% endcomment %}
+      </div>
+    </div>
+
   </div>
 </div>
+
 {% endblock %}

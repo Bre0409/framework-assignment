@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+  <h2 class="text-center mb-4">Your Profile</h2>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data" class="card p-4 shadow-sm mx-auto" style="max-width: 600px;">
+    {% csrf_token %}
+    
+    <div class="text-center mb-3">
+      <img src="{{ user.profile.avatar.url }}" class="rounded-circle mb-2" width="100" height="100" alt="Profile Picture">
+      <input type="file" name="avatar" class="form-control mt-2">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Username</label>
+      {{ user_form.username }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      {{ user_form.email }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Bio</label>
+      {{ profile_form.bio }}
+    </div>
+
+    <div class="d-flex justify-content-between">
+      <a href="{% url 'password_change' %}" class="btn btn-outline-secondary">Change Password</a>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

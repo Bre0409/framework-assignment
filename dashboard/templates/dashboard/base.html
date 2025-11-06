@@ -1,39 +1,45 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Dashboard{% endblock %}</title>
-  {% load static %}
+
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Main CSS -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
   <div class="d-flex">
     <!-- Sidebar -->
     <div class="sidebar d-flex flex-column">
-      <div class="text-center mb-4">
-        <img src="{% static 'img/user.png' %}" class="rounded-circle mb-2" width="60" height="60" alt="User">
-        <h5>User</h5>
+      <div class="user-sidebar">
+        <img src="{% static 'img/user.avif' %}" class="rounded-circle" width="60" height="60" alt="User">
+        <h3>User</h3>
       </div>
-      <nav class="nav flex-column">
-        <a class="nav-link active" href="#">🏠 Dashboard</a>
-        <a class="nav-link" href="#">📝 Tasks</a>
-        <a class="nav-link" href="#">📓 Notes</a>
-        <a class="nav-link" href="#">🎯 Goals</a>
-        <a class="nav-link" href="#">📅 Events</a>
-      </nav>
+
+      <nav class="nav flex-column mt-3">
+  <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">🏠 Dashboard</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'goals' %}active{% endif %}" href="{% url 'goals' %}">🎯 Goals</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}" href="{% url 'tasks' %}">✅ Tasks</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">👤 Profile</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'settings' %}">⚙️ Settings</a>
+</nav>
+
     </div>
 
     <!-- Main Content -->
     <div class="main-content flex-grow-1">
-      <!-- Top Bar -->
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">Dashboard</h2>
+        <h2 class="fw-bold">{% block header %}Dashboard{% endblock %}</h2>
+
         <div class="d-flex align-items-center gap-3">
           <span id="currentDate" class="text-muted"></span>
           <button id="themeToggle" class="btn btn-outline-light btn-sm">🌙</button>
-          <button class="btn btn-outline-danger btn-sm">Logout</button>
+          <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
         </div>
       </div>
 
@@ -41,7 +47,7 @@
     </div>
   </div>
 
-  <!-- Motivation Banner -->
+  <!-- Footer Banner -->
   <div id="motivationBanner" class="motivation-banner">
     Keep pushing forward — your consistency is paying off! 💪
   </div>

@@ -1,0 +1,40 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-4">
+  <h3 class="fw-bold mb-3">🎯 Manage Your Goals</h3>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-3" id="goalTabs">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#selectGoals">Select & Add Goals</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#myGoals">My Saved Goals</button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- SELECT GOALS TAB -->
+    <div class="tab-pane fade show active" id="selectGoals">
+      <div class="row g-3" id="popularGoalsList"></div>
+
+      <div class="input-group mt-3">
+        <input type="text" id="customGoalInput" class="form-control" placeholder="Add your own goal...">
+        <button id="addGoalBtn" class="btn btn-outline-primary">Add</button>
+      </div>
+
+      <button id="saveGoalsBtn" class="btn btn-primary mt-3">Save Selected Goals</button>
+    </div>
+
+    <!-- MY SAVED GOALS TAB -->
+    <div class="tab-pane fade" id="myGoals">
+      <ul id="customGoalsList" class="list-group mt-3"></ul>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/goals.js' %}"></script>
+
+{% endblock %}

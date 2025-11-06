@@ -1,0 +1,22 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3 fw-semibold">🗂️ Daily Tasks</h2>
+  <p class="text-muted">Select common tasks or add your own below.</p>
+
+  <!-- Task List -->
+  <div class="row" id="taskContainer">
+    <!-- Predefined tasks -->
+  </div>
+
+  <!-- Add Custom Task -->
+  <div class="mt-4 d-flex">
+    <input type="text" id="newTaskInput" class="form-control me-2" placeholder="Add a custom task...">
+    <button class="btn btn-primary" id="addTaskBtn">Add</button>
+  </div>
+</div>
+
+<script src="{% static 'js/tasks.js' %}"></script>
+{% endblock %}
