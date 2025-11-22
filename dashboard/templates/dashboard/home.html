@@ -2,14 +2,14 @@
 {% load static %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-
+ <h2 class="fw-bold">{% block header %}Dashboard{% endblock %}</h2>
 <div class="container-fluid mt-4">
   <div class="row g-4">
 
     <!-- ✅ TASKS -->
     <div class="col-md-6">
-      <div class="card bg-dark text-light p-4 rounded-4 shadow-lg h-100">
+      <div class="card dashboard-card "style="height: 300px;">
+
         <h4 class="fw-semibold mb-3">Tasks</h4>
         <ul class="list-group list-group-flush">
           {% for task in top_tasks %}
@@ -34,12 +34,13 @@
     </div>
 
     <!-- 📝 NOTES SECTION -->
-    <div class="col-md-6">
-      <div class="card bg-dark text-light p-4 rounded-4 shadow-lg h-100">
+    <div class="col-md-4">
+      <div class="card dashboard-card h-100">
+
         <h4 class="fw-semibold mb-3">Notes</h4>
         <div id="notesSection">
           <ul id="notesList" class="list-group list-group-flush mb-3">
-            <li class="list-group-item bg-transparent text-light border-secondary">
+            <li class="list-group-item bg-transparent text-light border-secondary mb-3">
               <input
                 type="text"
                 class="form-control bg-secondary text-light"
@@ -48,46 +49,51 @@
               >
             </li>
           </ul>
-          <button class="btn btn-outline-light w-100" id="addNoteBtn">Add Note</button>
+          <button class="btn btn-outline-light" id="addNoteBtn">Add Note</button>
         </div>
       </div>
     </div>
 
     <!-- 🎯 GOALS / HABITS -->
-    <div class="col-md-6">
-      <div class="card bg-dark text-light p-4 rounded-4 shadow-lg h-100">
-        <h4 class="fw-semibold mb-3">Goals</h4>
+     <div class="col-md-5">
+<div class="card dashboard-card ">
+  <h4 class="fw-semibold mb-3">Goals</h4>
 
-        <div class="goal-list">
-          {% for goal in top_goals %}
-          <div class="goal-item d-flex justify-content-between align-items-center">
-            <div class="goal-info">
-              <p class="mb-0 fw-semibold">{{ goal.title }}</p>
-            </div>
-            <div class="progress-ring small" data-value="{{ goal.progress }}">
-              <svg width="35" height="35">
-                <circle class="progress-ring-bg" cx="17.5" cy="17.5" r="15" />
-                <circle class="progress-ring-fill" cx="17.5" cy="17.5" r="15" />
-              </svg>
-              <div class="progress-ring-text">{{ goal.progress }}%</div>
-            </div>
-          </div>
-          {% empty %}
-          <p class="text-muted">No goals added yet — start building your habits!</p>
-          {% endfor %}
+  <div id="homeGoalsContainer" class="d-flex flex-column gap-1 ">
+    {% for goal in top_goals %}
+      <div class="home-goal-item d-flex align-items-center justify-content-between " data-id="{{ forloop.counter0 }}">
+        
+        <p class="">{{ goal.title }}</p>
+
+        <div class="progress-ring small" data-value="{{ goal.progress }}" data-id="{{ forloop.counter0 }}">
+          <svg width="35" height="35">
+            <circle class="progress-ring-bg" cx="17.5" cy="17.5" r="15"></circle>
+            <circle class="progress-ring-fill" cx="17.5" cy="17.5" r="15"></circle>
+          </svg>
+          <div class="progress-ring-text">{{ goal.progress }}%</div>
         </div>
       </div>
-    </div>
+     
+    {% endfor %}
+  </div>
+</div>
+ </div>
+ 
 
     <!-- 📊 WEEKLY PROGRESS -->
-    <div class="col-md-6">
-      <div class="card bg-dark text-light p-4 rounded-4 shadow-lg h-100">
-        <h4 class="fw-semibold mb-3">Weekly Progress</h4>
-        {% comment %} <canvas id="progressChart" height="150"></canvas> {% endcomment %}
-      </div>
-    </div>
+    <div class="col-md-5">
+  <div class="card dashboard-card ">
+    <h4 class="fw-semibold mb-3">Weekly Progress</h4>
 
+    <!-- Add a fixed-height wrapper around the canvas -->
+    <div class="chart-container" style="height: 240px; overflow: hidden;">
+      <canvas id="progressChart"></canvas>
+    </div>
   </div>
 </div>
 
+
+  </div>
+</div>
+<script src="{% static '/js/dashboard.js' %}"></script>
 {% endblock %}

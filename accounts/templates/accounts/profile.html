@@ -1,43 +1,65 @@
-{% extends 'base.html' %}
+{% extends "dashboard/base.html" %}
 {% load static %}
 
 {% block content %}
-<div class="container py-5">
-  <h2 class="text-center mb-4">Your Profile</h2>
-
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-success">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-
-  <form method="POST" enctype="multipart/form-data" class="card p-4 shadow-sm mx-auto" style="max-width: 600px;">
-    {% csrf_token %}
+<div class="container mt-4">
+  <div class="card dashboard-card p-4" style="max-width:720px; margin:auto;">
     
+    <h3 class="fw-semibold mb-3 text-center">👤 Your Profile</h3>
+
     <div class="text-center mb-3">
-      <img src="{{ user.profile.avatar.url }}" class="rounded-circle mb-2" width="100" height="100" alt="Profile Picture">
-      <input type="file" name="avatar" class="form-control mt-2">
+      {% if not dev_mode %}
+          <img src="{{ profile.avatar.url }}" class="rounded-circle" width="120" height="120" style="object-fit:cover;">
+          <p class="mt-2 fw-semibold">{{ request.user.username }}</p>
+          <p class="text-muted small">{{ request.user.email }}</p>
+      {% else %}
+          <img src="{% static 'img/user.avif' %}" class="rounded-circle" width="120" height="120" style="object-fit:cover;">
+          <p class="mt-2 fw-semibold">Demo User</p>
+          <p class="text-muted small">demo@example.com</p>
+          <div class="alert alert-warning mt-3">
+              <strong>DEV MODE ACTIVE — Editing disabled.</strong>
+          </div>
+      {% endif %}
     </div>
 
-    <div class="mb-3">
-      <label class="form-label">Username</label>
-      {{ user_form.username }}
-    </div>
+    {% if not dev_mode %}
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
 
-    <div class="mb-3">
-      <label class="form-label">Email</label>
-      {{ user_form.email }}
-    </div>
+        <h5 class="fw-semibold">Profile Details</h5>
 
-    <div class="mb-3">
-      <label class="form-label">Bio</label>
-      {{ profile_form.bio }}
-    </div>
+        <div class="mb-3">
+          <label class="form-label">Profile Picture</label>
+          {{ profile_form.avatar }}
+        </div>
 
-    <div class="d-flex justify-content-between">
-      <a href="{% url 'password_change' %}" class="btn btn-outline-secondary">Change Password</a>
-      <button type="submit" class="btn btn-primary">Save Changes</button>
-    </div>
-  </form>
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          {{ user_form.username }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          {{ user_form.email }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Bio</label>
+          {{ profile_form.bio }}
+        </div>
+
+        <button class="btn btn-primary w-100">Save Changes</button>
+      </form>
+
+      <hr class="my-4">
+
+      <h5 class="fw-semibold">Password</h5>
+      <a href="{% url 'password_change' %}" class="btn btn-outline-secondary w-100 mb-3">Change Password</a>
+
+      <h5 class="fw-semibold text-danger">Danger Zone</h5>
+      <a href="{% url 'delete_account' %}" class="btn btn-outline-danger w-100">Delete Account</a>
+
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

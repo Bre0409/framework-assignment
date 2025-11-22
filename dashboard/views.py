@@ -15,8 +15,7 @@ def goals(request):
 def tasks(request):
     return render(request, 'dashboard/tasks.html')
 
-def profile(request):
-    return render(request, 'dashboard/profile.html')
+
 
 def settings_view(request):
     return render(request, 'dashboard/settings.html')

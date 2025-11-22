@@ -3,38 +3,57 @@
 {% block content %}
 
 <div class="container mt-4">
-  <h3 class="fw-bold mb-3">🎯 Manage Your Goals</h3>
+  <h3 class="fw-bold mb-3">Goals</h3>
 
-  <!-- Tabs -->
-  <ul class="nav nav-tabs mb-3" id="goalTabs">
-    <li class="nav-item">
-      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#selectGoals">Select & Add Goals</button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#myGoals">My Saved Goals</button>
-    </li>
-  </ul>
+  <div class="card dashboard-card p-4">
 
-  <div class="tab-content">
-    <!-- SELECT GOALS TAB -->
-    <div class="tab-pane fade show active" id="selectGoals">
-      <div class="row g-3" id="popularGoalsList"></div>
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="goalsTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage" type="button" role="tab">Choose Goals</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved" type="button" role="tab">Manage Saved Goals</button>
+      </li>
+    </ul>
 
-      <div class="input-group mt-3">
-        <input type="text" id="customGoalInput" class="form-control" placeholder="Add your own goal...">
-        <button id="addGoalBtn" class="btn btn-outline-primary">Add</button>
+    <div class="tab-content mt-4" id="goalsTabContent">
+
+      <!-- 🧭 Manage Goals -->
+      <div class="tab-pane fade show active" id="manage" role="tabpanel">
+        <h5 class="fw-semibold mb-3">Popular Goals</h5>
+        <div id="popularGoalsContainer" class="row g-2"></div>
+
+        <hr class="my-4">
+
+        <h5 class="fw-semibold mb-3">Your Custom Goals</h5>
+        <div id="customGoalsContainer" class="row g-2 mb-3"></div>
+
+        <div class="input-group mb-3">
+          <input id="newGoalText" class="form-control" placeholder="Add your own goal...">
+          <select id="newGoalType" class="form-select">
+            <option value="static">Static (checkbox)</option>
+            <option value="numeric">Numeric (slider)</option>
+          </select>
+          <button id="addCustomBtn" class="btn btn-primary">Add</button>
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <button id="saveGoalsBtn" class="btn btn-success">Save Goals</button>
+        </div>
       </div>
 
-      <button id="saveGoalsBtn" class="btn btn-primary mt-3">Save Selected Goals</button>
-    </div>
-
-    <!-- MY SAVED GOALS TAB -->
-    <div class="tab-pane fade" id="myGoals">
-      <ul id="customGoalsList" class="list-group mt-3"></ul>
+      <!-- 💾 Saved Goals -->
+      <div class="tab-pane fade" id="saved" role="tabpanel">
+        <h5 class="fw-semibold mb-3">Your Saved Goals</h5>
+        <p class="text-muted mb-3">Reorder, edit, or update your progress below. Drag by the <span class="drag-handle-indicator">☰</span> handle to reorder.</p>
+        <div id="savedGoalsList" class="list-group"></div>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- Load bootstrap bundle before your script to ensure tabs work -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'js/goals.js' %}"></script>
-
 {% endblock %}

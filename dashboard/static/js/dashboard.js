@@ -75,37 +75,92 @@ document.addEventListener("DOMContentLoaded", () => {
       noteInput.value = "";
     }
   });
+// -------- GOALS (Top 5 from goals.js) --------
+const goalList = document.getElementById("goalList");
+
+// Load all goals from goals.js storage
+function loadAllGoals() {
+  return JSON.parse(localStorage.getItem("productivity_goals_v4")) || [];
+}
+
+// Extract the selected goals and take only the first 5
+function getTopFiveGoals() {
+  let all = loadAllGoals().filter(g => g.selected);
+  all.sort((a, b) => (a.order || 0) - (b.order || 0));
+  return all.slice(0, 5);
+}
+
+let topGoals = getTopFiveGoals();
+
+// Render on dashboard
+function renderGoals() {
+  topGoals = getTopFiveGoals();
+  goalList.innerHTML = "";
+
+  topGoals.forEach((goal, i) => {
+    const li = document.createElement("li");
+
+    li.innerHTML = `
+      <label class="d-flex align-items-center mb-2">
+        <input type="checkbox" ${goal.progress === 100 ? "checked" : ""} 
+               data-id="${goal.id}" 
+               class="form-check-input me-2 goal-toggle">
+        <span>${goal.title}</span>
+      </label>
+    `;
+
+    goalList.appendChild(li);
+  });
+
+  updateProgressRing();
+}
+
+// Checkbox event → update storage + ring
+goalList.addEventListener("change", (e) => {
+  if (!e.target.classList.contains("goal-toggle")) return;
+
+  const id = e.target.dataset.id;
+  let all = loadAllGoals();
+  const goal = all.find(g => g.id === id);
+
+  if (!goal) return;
+
+  goal.progress = e.target.checked ? 100 : 0;
+  localStorage.setItem("productivity_goals_v4", JSON.stringify(all));
+
+  renderGoals();
+});
 
   // -------- GOALS & RING --------
-  const goalList = document.getElementById("goalList");
-  let goals = JSON.parse(localStorage.getItem("goals")) || [
-    { text: "Drink water", done: true },
-    { text: "Jogging", done: false },
-    { text: "Read", done: false },
-  ];
+  // const goalList = document.getElementById("goalList");
+  // let goals = JSON.parse(localStorage.getItem("goals")) || [
+  //   { text: "Drink water", done: true },
+  //   { text: "Jogging", done: false },
+  //   { text: "Read", done: false },
+  // ];
 
-  const renderGoals = () => {
-    goalList.innerHTML = "";
-    goals.forEach((goal, i) => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-        <label class="d-flex align-items-center mb-2">
-          <input type="checkbox" ${goal.done ? "checked" : ""} data-index="${i}" class="form-check-input me-2">
-          <span>${goal.text}</span>
-        </label>`;
-      goalList.appendChild(li);
-    });
-    updateProgressRing();
-  };
+  // const renderGoals = () => {
+  //   goalList.innerHTML = "";
+  //   goals.forEach((goal, i) => {
+  //     const li = document.createElement("li");
+  //     li.innerHTML = `
+  //       <label class="d-flex align-items-center mb-2">
+  //         <input type="checkbox" ${goal.done ? "checked" : ""} data-index="${i}" class="form-check-input me-2">
+  //         <span>${goal.text}</span>
+  //       </label>`;
+  //     goalList.appendChild(li);
+  //   });
+  //   updateProgressRing();
+  // };
 
-  goalList.addEventListener("change", (e) => {
-    if (e.target.type === "checkbox") {
-      const index = e.target.dataset.index;
-      goals[index].done = e.target.checked;
-      localStorage.setItem("goals", JSON.stringify(goals));
-      updateProgressRing();
-    }
-  });
+  // goalList.addEventListener("change", (e) => {
+  //   if (e.target.type === "checkbox") {
+  //     const index = e.target.dataset.index;
+  //     goals[index].done = e.target.checked;
+  //     localStorage.setItem("goals", JSON.stringify(goals));
+  //     updateProgressRing();
+  //   }
+  // });
 
   // -------- PROGRESS RING --------
   const circle = document.querySelector(".progress-ring-fill");
@@ -126,32 +181,133 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -------- CHART --------
-  // const ctx = document.getElementById("progressChart");
-  // if (ctx) {
-  //   new Chart(ctx, {
-  //     type: "line",
-  //     data: {
-  //       labels: ["M", "T", "W", "T", "F", "S", "S"],
-  //       datasets: [
-  //         {
-  //           data: [4, 6, 7, 8, 6, 8, 10],
-  //           borderColor: "#00b4ff",
-  //           tension: 0.4,
-  //           fill: false,
-  //         },
-  //       ],
-  //     },
-  //     options: {
-  //       plugins: { legend: { display: false } },
-  //       scales: {
-  //         y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.05)" } },
-  //         x: { grid: { color: "transparent" } },
-  //       },
-  //     },
-  //   });
-  // }
+  const ctx = document.getElementById("progressChart");
+  if (ctx) {
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: ["M", "T", "W", "T", "F", "S", "S"],
+        datasets: [
+          {
+            data: [4, 6, 7, 8, 6, 8, 10],
+            borderColor: "#00b4ff",
+            tension: 0.4,
+            fill: false,
+          },
+        ],
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.05)" } },
+          x: { grid: { color: "transparent" } },
+        },
+      },
+    });
+  }
 
-  // renderTasks();
-  // renderNotes();
-  // renderGoals();
+  renderTasks();
+  renderNotes();
+  renderGoals();
 });
+
+
+// storage
+(function () {
+  const STORAGE_KEY = "productivity_goals_v4";
+
+  function loadGoals() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  }
+
+  /** Convert 0–100 progress to ring stroke offset */
+  function ringOffset(progress) {
+    const radius = 40;
+    const circumference = 2 * Math.PI * radius;
+    return circumference - (progress / 100) * circumference;
+  }
+
+  /** Render top 5 selected goals */
+  function renderTopGoals() {
+    const container = document.getElementById("topGoalsContainer");
+    if (!container) return;
+
+    const goals = loadGoals()
+      .filter(g => g.selected)
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+      .slice(0, 5);
+
+    container.innerHTML = "";
+
+    goals.forEach(g => {
+      const progress = g.progress || 0;
+      const numeric = g.type === "numeric";
+
+      const item = document.createElement("div");
+      item.className = "col-md-4 mb-3";
+
+      item.innerHTML = `
+        <div class="goal-box p-3 rounded border bg-dark text-white d-flex align-items-center gap-3">
+
+          ${
+            numeric
+              ? `
+              <!-- Ring -->
+              <svg width="90" height="90">
+                  <circle cx="45" cy="45" r="40" stroke="#333" stroke-width="8" fill="none" />
+                  <circle cx="45" cy="45" r="40" stroke="#00b4ff" stroke-width="8" fill="none"
+                          stroke-dasharray="251"
+                          stroke-dashoffset="${ringOffset(progress)}"
+                          stroke-linecap="round"
+                          class="ring-prog" />
+              </svg>
+            `
+              : `
+              <!-- Static goal checkbox icon -->
+              <div class="static-check text-center">
+                <input type="checkbox" ${progress === 100 ? "checked" : ""} class="static-toggle"
+                       data-id="${g.id}" style="transform: scale(1.5);">
+              </div>
+            `
+          }
+
+          <div>
+            <strong>${g.title}</strong><br>
+            <small class="text-muted">${numeric ? progress + "%" : "Static Goal"}</small>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(item);
+    });
+
+    bindStaticCheckboxEvents();
+  }
+
+  /** Allow static goals to update progress when toggled from dashboard */
+  function bindStaticCheckboxEvents() {
+    document.querySelectorAll(".static-toggle").forEach(box => {
+      box.addEventListener("change", e => {
+        const id = e.target.dataset.id;
+        const goals = loadGoals();
+        const g = goals.find(goal => goal.id === id);
+        if (g) {
+          g.progress = e.target.checked ? 100 : 0;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
+          renderTopGoals(); // Refresh rings
+        }
+      });
+    });
+  }
+
+  /** Live update rings when localStorage changes (from goals.js) */
+  window.addEventListener("storage", () => {
+    renderTopGoals();
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    renderTopGoals();
+  });
+})();

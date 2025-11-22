@@ -13,142 +13,78 @@ body {
 /* SIDEBAR */
 /* ----------------------------- */
 .sidebar {
-  width: 240px;
+  width: 340px;
   height: 100vh;
-  background: #121820;
-  color: #e6f1ff;
-  padding: 20px;
-  position: fixed;
-  left: 0;
-  top: 0;
-}
-
-.user-sidebar {
+  background: #11151c;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 28px 20px;
   display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 30px;
+  flex-direction: column;
+  font-size: 25px;
 }
 
 .nav-link {
-  color: #a3a3a3;
-  margin: 8px 0;
-  font-weight: 500;
-  transition: all 0.3s;
+  
+  color: #7e8895;
+  padding: 10px 8px;
+  border-radius: 8px;
+  transition: background 0.25s, color 0.25s, transform 0.2s;
 }
-.nav-link:hover, .nav-link.active {
+
+.nav-link.active, .nav-link:hover {
+  background: rgba(255,255,255,0.06);
   color: #fff;
-  transform: translateX(5px);
+  transform: translateX(4px);
 }
+:root {
+  --accent: #3a8bff;
+}
+.btn,
+.progress-ring-fill {
+  color: var(--accent);
+  stroke: var(--accent);
+}
+
 
 /* ----------------------------- */
 /* MAIN CONTENT */
 /* ----------------------------- */
 .main-content {
-  margin-left: 260px;
-  /* border: 2px blue solid; */
+  margin-left: 20px;
+  margin-right: 20px;
   padding: 40px;
-}
-
-.container-fluid {
-  
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-  gap: 25px;
- 
-}
-
-.soft-card {
-  background: var(--bs-body-bg);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
- 
-}
-.soft-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.soft-item {
-  background: rgba(255,255,255,0.05);
-  border-radius: 10px;
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  transition: background 0.2s ease;
-}
-.soft-item:hover {
-  background: rgba(255,255,255,0.1);
-}
-
-.ring {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 6px solid rgba(100,100,255,0.25);
-  border-top-color: var(--bs-primary);
-  margin: 0 auto;
-  animation: spin 6s linear infinite;
-  opacity: 0.8;
-}
-@keyframes spin {
-  0% { transform: rotate(0); }
-  100% { transform: rotate(360deg); }
 }
 
 /* ----------------------------- */
 /* CARDS */
 /* ----------------------------- */
 .card {
-  /* display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); */
-  background: #1b2130;
+  background: #161b24;
+  border-radius: 18px;
   border: none;
-  width: 560px;
-  border-radius: 12px;
+  padding: 24px;
   color: #e6f1ff;
-  padding: 20px;
-  /* border: 2px red solid; */
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  transition: transform 0.2s ease;
 }
 
-/* ===============================
-   GOAL LIST + PROGRESS RINGS (50% smaller, theme-adjusted)
-   =============================== */
-
-.goal-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.card:hover {
+  transform: translateY(-3px);
 }
 
-.goal-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 6px 12px;
-  border-radius: 8px;
-  transition: background 0.2s ease, transform 0.2s ease;
+.sidebar,
+.navbar {
+  background: #11161f;
+  /* border: none; */
+  /* width: 400px; */
+  
 }
 
-.goal-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateX(3px);
-}
 
-.goal-info p {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #e6f1ff;
-  opacity: 0.95;
-}
+/* ----------------------------- */
+/* PROGRESS RINGS (Home Dashboard) */
+/* ----------------------------- */
 
-/* Smaller ring container */
 .progress-ring.small {
   position: relative;
   width: 35px;
@@ -162,7 +98,6 @@ body {
   height: 35px;
 }
 
-/* Ring base + fill with modern blue-green glow */
 .progress-ring-bg {
   fill: none;
   stroke: #1f2a3a;
@@ -175,10 +110,9 @@ body {
   stroke-linecap: round;
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
-  transition: stroke-dashoffset 1s ease-out, stroke 0.3s ease;
+  transition: stroke-dashoffset 0.6s ease, stroke 0.3s ease;
 }
 
-/* Progress percentage text */
 .progress-ring-text {
   position: absolute;
   top: 50%;
@@ -190,28 +124,24 @@ body {
   opacity: 0.9;
 }
 
-/* Optional: color theme thresholds (dynamic look) */
-.progress-ring[data-value] .progress-ring-fill {
-  stroke: #00b4ff;
-}
-
-.progress-ring[data-value*="8"],
+/* Color logic depending on progress */
+.progress-ring[data-value^="8"],
 .progress-ring[data-value^="9"],
 .progress-ring[data-value="100"] .progress-ring-fill {
-  stroke: #00ff88; /* green for high success */
+  stroke: #00ff88;
 }
 
 .progress-ring[data-value^="5"],
 .progress-ring[data-value^="6"],
 .progress-ring[data-value^="7"] .progress-ring-fill {
-  stroke: #00b4ff; /* blue mid range */
+  stroke: #00b4ff;
 }
 
 .progress-ring[data-value^="1"],
 .progress-ring[data-value^="2"],
 .progress-ring[data-value^="3"],
 .progress-ring[data-value^="4"] .progress-ring-fill {
-  stroke: #ff4d4d; /* red for low progress */
+  stroke: #ff4d4d;
 }
 
 /* ----------------------------- */
@@ -240,6 +170,89 @@ body.light-mode .card {
   font-weight: 500;
   letter-spacing: 0.4px;
 }
+
+.container-fluid {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.row.g-4 > [class*='col-'] {
+  display: flex;
+}
+
+.card {
+  flex: 1; /* all cards stretch evenly */
+}
+
+h4 {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+#popularGoalsContainer{
+  background-color: #161b24;
+  color: white;
+}
+/* -----------------------------
+   GOAL PILL (selectable)
+   ----------------------------- */
+.goal-pill {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s;
+  color: #e6f1ff;
+  user-select: none;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.goal-pill:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+.goal-pill.active {
+  background: #00b4ff;
+  border-color: #00b4ff;
+  color: #072233;
+  box-shadow: 0 6px 18px rgba(0,180,255,0.12);
+}
+
+/* small-range for saved goals */
+.small-range { height: 28px; }
+
+/* drag-handle (small area to start drag) */
+.drag-handle {
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.02);
+  color: #aeb8c8;
+  transition: background 0.15s;
+}
+.drag-handle:active { cursor: grabbing; background: rgba(255,255,255,0.04); }
+
+/* dragging visual */
+.list-group-item.dragging { opacity: 0.6; transform: scale(0.995); }
+
+/* saved goals buttons styling small tweaks */
+.list-group-item .btn { padding: 4px 8px; font-size: 0.78rem; }
+
+/* small helper for the drag handle text in description */
+.drag-handle-indicator { font-weight: 700; color: #aeb8c8; }
+
+/* make sure goal-pill fits grid */
+#popularGoalsContainer .col-6, #customGoalsContainer .col-6 { display: flex; }
+#popularGoalsContainer .goal-pill, #customGoalsContainer .goal-pill { width: 100%; }
+
+/* ensure sliders are touch friendly */
+input[type="range"] { touch-action: pan-x; -webkit-appearance: none; }
+
+/* minor saved goals gap */
+#savedGoalsList .list-group-item { display: flex; justify-content: space-between; align-items: center; }
 
 /* ----------------------------- */
 /* RESPONSIVE */

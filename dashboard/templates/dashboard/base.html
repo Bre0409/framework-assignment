@@ -11,6 +11,7 @@
 
   <!-- Main CSS -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
 </head>
 <body>
   <div class="d-flex">
@@ -22,11 +23,11 @@
       </div>
 
       <nav class="nav flex-column mt-3">
-  <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">🏠 Dashboard</a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'goals' %}active{% endif %}" href="{% url 'goals' %}">🎯 Goals</a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}" href="{% url 'tasks' %}">✅ Tasks</a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">👤 Profile</a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'settings' %}">⚙️ Settings</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Dashboard</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'goals' %}active{% endif %}" href="{% url 'goals' %}"> Goals</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}" href="{% url 'tasks' %}">Tasks</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}"> Profile</a>
+  <a class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'settings' %}">Settings</a>
 </nav>
 
     </div>
@@ -34,10 +35,10 @@
     <!-- Main Content -->
     <div class="main-content flex-grow-1">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">{% block header %}Dashboard{% endblock %}</h2>
+        {% comment %} <h2 class="fw-bold">{% block header %}Dashboard{% endblock %}</h2> {% endcomment %}
 
         <div class="d-flex align-items-center gap-3">
-          <span id="currentDate" class="text-muted"></span>
+          <span id="currentDate" class="text"></span>
           <button id="themeToggle" class="btn btn-outline-light btn-sm">🌙</button>
           <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
         </div>

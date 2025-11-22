@@ -93,44 +93,44 @@ document.addEventListener("DOMContentLoaded", () => {
   // ----------------------------
   // 5️⃣ Chart.js (Weekly Trend)
   // ----------------------------
-  // const ctx = document.getElementById("progressChart");
-  // if (ctx) {
-  //   new Chart(ctx, {
-  //     type: "bar",
-  //     data: {
-  //       labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-  //       datasets: [
-  //         {
-  //           label: "Progress %",
-  //           data: [65, 80, 70, 90, 75, 85, 95],
-  //           borderRadius: 6,
-  //           backgroundColor: (ctx) => {
-  //             const index = ctx.dataIndex;
-  //             const value = ctx.dataset.data[index];
-  //             if (value >= 90) return "#00ff88";
-  //             if (value >= 70) return "#00b4ff";
-  //             return "#ff4d4d";
-  //           },
-  //         },
-  //       ],
-  //     },
-  //     options: {
-  //       scales: {
-  //         y: {
-  //           beginAtZero: true,
-  //           max: 100,
-  //           ticks: { color: "#ccc" },
-  //           grid: { color: "rgba(255,255,255,0.05)" },
-  //         },
-  //         x: {
-  //           ticks: { color: "#ccc" },
-  //           grid: { color: "transparent" },
-  //         },
-  //       },
-  //       plugins: { legend: { display: false } },
-  //       responsive: true,
-  //       maintainAspectRatio: false,
-  //     },
-  //   });
-  // }
+  const ctx = document.getElementById("progressChart");
+  if (ctx) {
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        datasets: [
+          {
+            label: "Progress %",
+            data: [65, 80, 70, 90, 75, 85, 95],
+            borderRadius: 6,
+            backgroundColor: (ctx) => {
+              const index = ctx.dataIndex;
+              const value = ctx.dataset.data[index];
+              if (value >= 90) return "#00ff88";
+              if (value >= 70) return "#00b4ff";
+              return "#ff4d4d";
+            },
+          },
+        ],
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { color: "#ccc" },
+            grid: { color: "rgba(255,255,255,0.05)" },
+          },
+          x: {
+            ticks: { color: "#ccc" },
+            grid: { color: "transparent" },
+          },
+        },
+        plugins: { legend: { display: false } },
+        responsive: true,
+        maintainAspectRatio: false,
+      },
+    });
+  }
 });
