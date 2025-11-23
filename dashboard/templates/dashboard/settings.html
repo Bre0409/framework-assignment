@@ -1,0 +1,25 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+  <div class="card dashboard-card p-4" style="max-width:800px;margin:auto;">
+    <h3 class="fw-semibold mb-3">⚙️ Settings</h3>
+    <p class="text-muted">App-level settings (placeholder). You can add theme, notifications, and account preferences here.</p>
+
+    <div class="mb-3">
+      <label class="form-label">Theme</label>
+      <select class="form-select">
+        <option selected>Dark</option>
+        <option>Light</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Default Dashboard Items</label>
+      <input class="form-control" placeholder="Top items to show (e.g. 5)">
+    </div>
+
+    <button class="btn btn-primary">Save Settings</button>
+  </div>
+</div>
+{% endblock %}

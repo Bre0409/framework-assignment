@@ -21,7 +21,8 @@ INSTALLED_APPS = [
 
     # Local apps
     'dashboard',
-    'accounts',
+    'accounts.apps.AccountsConfig',
+
 ]
 
 # -----------------------------
@@ -63,10 +64,15 @@ WSGI_APPLICATION = 'productivityhub.wsgi.application'
 # -----------------------------
 # DATABASE
 # -----------------------------
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'productivity_db',
+        'USER': 'productivity_user',
+        'PASSWORD': 'mypassword123',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
