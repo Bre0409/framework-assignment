@@ -5,4 +5,5 @@ class AccountsConfig(AppConfig):
     name = 'accounts'
 
     def ready(self):
-        import accounts.signals   # <-- LOAD SIGNALS
+        # import signals to ensure they register
+        from . import signals  # noqa

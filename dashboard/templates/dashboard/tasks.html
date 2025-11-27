@@ -1,17 +1,13 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
-
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/tasks.css' %}">
 
 <div class="container mt-4">
   <h2 class="mb-3 fw-semibold">Daily Tasks</h2>
-  
 
   <div class="card dashboard-card p-4">
-
-    <!-- Tabs -->
-     <p class="text-muted">Select common tasks or add your own below.</p>
+    <p class="text-muted">Select common tasks or add your own below.</p>
     <ul class="nav nav-tabs" id="tasksTab" role="tablist">
       <li class="nav-item" role="presentation">
         <button class="nav-link active" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage" type="button" role="tab">Manage Tasks</button>
@@ -22,7 +18,6 @@
     </ul>
 
     <div class="tab-content mt-3" id="tasksTabContent">
-      <!-- Manage -->
       <div class="tab-pane fade show active" id="manage" role="tabpanel">
         <h5 class="fw-semibold mb-2">Popular Tasks</h5>
         <div id="popularTasksContainer" class="row g-2 mb-3"></div>
@@ -42,7 +37,6 @@
         </div>
       </div>
 
-      <!-- Saved -->
       <div class="tab-pane fade" id="saved" role="tabpanel">
         <h5 class="fw-semibold mb-3">Saved Tasks</h5>
         <p class="text-muted mb-3">Reorder, remove, or mark tasks complete.</p>
@@ -53,6 +47,5 @@
 </div>
 
 <script src="{% static 'js/tasks.js' %}"></script>
-<!-- Bootstrap JS if not already included in base -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}

@@ -1,293 +1,258 @@
-// static/js/tasks.js
-(function () {
-  const STORAGE_KEY = "productivity_tasks_v1";
+// dashboard/static/js/tasks.js
 
-  const POPULAR = [
-    "Walk the dog",
-    "Make the bed",
-    "Do the dishes",
-    "Check emails",
-    "Go for a run",
-    "Water the plants",
-    "Plan meals",
-    "Clean the kitchen",
-    "Read for 20 minutes",
-    "Call a family member",
-    "Meditate",
-    "Take vitamins",
-    "Do laundry",
-    "Tidy workspace",
-    "Pay bills"
-  ];
+document.addEventListener("DOMContentLoaded", () => {
+  loadTasks();
 
-  // Helpers - storage
-  function loadTasksRaw() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
+  const addCustomBtn = document.getElementById("addCustomTaskBtn");
+  const saveTasksBtn = document.getElementById("saveTasksBtn");
+
+  if (addCustomBtn) {
+    addCustomBtn.addEventListener("click", onAddCustomTask);
   }
-
-  function seedTasks() {
-    // seed structure: { id, title, selected(bool), completed(bool), order(int), custom(bool) }
-    const seeded = POPULAR.map((t, i) => ({
-      id: `p${i + 1}`,
-      title: t,
-      selected: false,
-      completed: false,
-      order: i,
-      custom: false
-    }));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-    return seeded;
+  if (saveTasksBtn) {
+    saveTasksBtn.addEventListener("click", onSaveTasks);
   }
+});
 
-  function loadTasks() {
-    const raw = loadTasksRaw();
-    if (!raw) return seedTasks();
-    // ensure all popular items exist if user storage older
-    const existingIds = new Set(raw.map(x => x.id));
-    let changed = false;
-    POPULAR.forEach((t, i) => {
-      const id = `p${i + 1}`;
-      if (!existingIds.has(id)) {
-        raw.push({ id, title: t, selected: false, completed: false, order: raw.length, custom: false });
-        changed = true;
-      }
-    });
-    if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(raw));
-    return raw;
-  }
+// ------------ CSRF helper -------------
+function getCSRF() {
+  const name = "csrftoken=";
+  const cookie = document.cookie.split("; ").find((row) => row.startsWith(name));
+  return cookie ? cookie.split("=")[1] : "";
+}
+const csrftoken = getCSRF();
 
-  function saveTasks(tasks) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    // notify other parts of the app (dashboard) to refresh top-5
-    window.dispatchEvent(new CustomEvent('tasks:updated', { detail: { tasks } }));
-  }
+// ------------ State -------------
+let popularData = [];
+let savedTasks = [];
+let stagedTitles = new Set();      // titles user wants saved
+let customDraftTitles = new Set(); // new custom tasks not yet in DB
 
-  // DOM render helpers
-  function createPill(task) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'col-md-3 col-sm-6';
-    const activeClass = task.selected ? 'active' : '';
-    wrapper.innerHTML = `<div class="goal-pill task-pill ${activeClass}" data-id="${task.id}">${escapeHtml(task.title)}</div>`;
-    const pill = wrapper.querySelector('.task-pill');
-    pill.addEventListener('click', () => {
-      toggleSelect(task.id);
-    });
-    return wrapper;
-  }
+// ------------ Load from backend -------------
+function loadTasks() {
+  fetch("/api/tasks/list/")
+    .then((res) => res.json())
+    .then((data) => {
+      popularData = data.popular || [];
+      savedTasks = data.tasks || [];
 
-  function escapeHtml(s){ return s.replace(/[&<>"'`]/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;', '`':'&#96;' }[m])); }
+      // initial staged set = titles of currently saved tasks
+      stagedTitles = new Set(savedTasks.map((t) => t.title));
+      customDraftTitles.clear();
 
-  // Manage actions
-  function toggleSelect(id) {
-    const tasks = loadTasks();
-    const t = tasks.find(x => x.id === id);
-    if (!t) return;
-    t.selected = !t.selected;
-    if (t.selected && typeof t.order !== 'number') t.order = tasks.length;
-    saveTasks(tasks);
-    renderManage();
-    renderSaved();
-  }
+      renderManageTab();
+      renderSavedTab();
+    })
+    .catch((err) => console.error("Error loading tasks:", err));
+}
 
-  function renderManage() {
-    const container = document.getElementById('popularTasksContainer');
-    const customContainer = document.getElementById('customTasksContainer');
-    if (!container || !customContainer) return;
+// ------------ Manage tab rendering -------------
 
-    const tasks = loadTasks();
-    container.innerHTML = '';
-    customContainer.innerHTML = '';
+function renderManageTab() {
+  const popularContainer = document.getElementById("popularTasksContainer");
+  const customContainer = document.getElementById("customTasksContainer");
+  if (!popularContainer || !customContainer) return;
 
-    // Popular (by POPULAR order)
-    POPULAR.forEach((title, idx) => {
-      const id = `p${idx + 1}`;
-      const task = tasks.find(t => t.id === id) || { id, title, selected: false };
-      container.appendChild(createPill(task));
-    });
+  popularContainer.innerHTML = "";
+  customContainer.innerHTML = "";
 
-    // Custom (any tasks with custom===true)
-    tasks.filter(t => t.custom).forEach(t => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'col-md-3 col-sm-6';
-      wrapper.innerHTML = `
-        <div class="goal-pill d-flex justify-content-between align-items-center" data-id="${t.id}">
-          <span>${escapeHtml(t.title)}</span>
-          <button class="btn btn-sm btn-outline-danger ms-2 remove-custom" data-id="${t.id}">✕</button>
-        </div>
-      `;
-      wrapper.querySelector('.remove-custom').addEventListener('click', (e) => {
-        e.stopPropagation();
-        removeCustom(t.id);
-      });
-      // clicking the pill toggles selection
-      wrapper.querySelector('.goal-pill').addEventListener('click', () => toggleSelect(t.id));
-      customContainer.appendChild(wrapper);
-    });
-  }
+  // Popular tasks
+  popularData.forEach((task) => {
+    const title = task.title;
+    const isSelected = stagedTitles.has(title);
 
-  function addCustomTask(text) {
-    if (!text) return;
-    const tasks = loadTasks();
-    const id = 'c' + Date.now();
-    tasks.push({ id, title: text, selected: true, completed: false, order: tasks.length, custom: true });
-    saveTasks(tasks);
-    renderManage();
-    renderSaved();
-  }
+    const col = document.createElement("div");
+    col.className = "col-12";
 
-  function removeCustom(id) {
-    let tasks = loadTasks();
-    tasks = tasks.filter(t => t.id !== id);
-    saveTasks(tasks);
-    renderManage();
-    renderSaved();
-  }
+    col.innerHTML = `
+      <div class="task-item border rounded p-2 d-flex justify-content-between align-items-center">
+        <span>${title}</span>
+        <button
+          type="button"
+          class="btn btn-sm ${isSelected ? "btn-success" : "btn-outline-success"} task-select-btn"
+          data-title="${title}"
+        >
+          ${isSelected ? "Selected" : "Select"}
+        </button>
+      </div>
+    `;
 
-  // Saved tab
-  function renderSaved() {
-    const list = document.getElementById('savedTasksList');
-    if (!list) return;
-    const tasks = loadTasks().filter(t => t.selected).sort((a,b) => (a.order||0)-(b.order||0));
-    list.innerHTML = '';
-
-    if (tasks.length === 0) {
-      list.innerHTML = `<div class="list-group-item bg-transparent text-muted">No saved tasks — pick some from Manage.</div>`;
-      return;
-    }
-
-    tasks.forEach(task => {
-      const item = document.createElement('div');
-      item.className = 'list-group-item bg-transparent d-flex justify-content-between align-items-center mb-2';
-      item.draggable = true;
-      item.dataset.id = task.id;
-
-      item.innerHTML = `
-        <div class="d-flex align-items-center gap-3">
-          <input class="form-check-input saved-task-toggle" type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task.id}">
-          <div>${escapeHtml(task.title)}</div>
-        </div>
-        <div>
-          <button class="btn btn-sm btn-outline-danger remove-saved" data-id="${task.id}">Remove</button>
-        </div>
-      `;
-
-      // checkbox handler
-      item.querySelector('.saved-task-toggle').addEventListener('change', (e) => {
-        const id = e.target.dataset.id;
-        const all = loadTasks();
-        const t = all.find(x => x.id === id);
-        if (!t) return;
-        t.completed = e.target.checked;
-        saveTasks(all);
-        // let dashboard update via event
-      });
-
-      // remove handler (unselect)
-      item.querySelector('.remove-saved').addEventListener('click', (e) => {
-        const id = e.target.dataset.id;
-        const all = loadTasks();
-        const t = all.find(x => x.id === id);
-        if (!t) return;
-        t.selected = false;
-        saveTasks(all);
-        renderManage();
-        renderSaved();
-      });
-
-      // drag events for reorder
-      item.addEventListener('dragstart', (ev) => {
-        ev.dataTransfer.setData('text/plain', task.id);
-        ev.dataTransfer.effectAllowed = 'move';
-        item.classList.add('dragging');
-      });
-      item.addEventListener('dragend', () => item.classList.remove('dragging'));
-
-      list.appendChild(item);
-    });
-
-    // drop handling on container (allow reordering)
-    list.addEventListener('dragover', (ev) => ev.preventDefault());
-    list.addEventListener('drop', (ev) => {
-      ev.preventDefault();
-      const draggedId = ev.dataTransfer.getData('text/plain');
-      const target = ev.target.closest('.list-group-item');
-      if (!target) return;
-      const targetId = target.dataset.id;
-      if (!draggedId || !targetId || draggedId === targetId) return;
-
-      let all = loadTasks();
-      const saved = all.filter(t => t.selected).sort((a,b) => (a.order||0)-(b.order||0));
-      const draggedIdx = saved.findIndex(s => s.id === draggedId);
-      const targetIdx = saved.findIndex(s => s.id === targetId);
-      if (draggedIdx === -1 || targetIdx === -1) return;
-
-      const [dragged] = saved.splice(draggedIdx, 1);
-      saved.splice(targetIdx, 0, dragged);
-
-      // write back order for just saved items; keep others unchanged
-      let orderCounter = 0;
-      saved.forEach(s => {
-        const t = all.find(x => x.id === s.id);
-        if (t) {
-          t.order = orderCounter++;
-        }
-      });
-
-      saveTasks(all);
-      renderSaved();
-      renderManage();
-    });
-  }
-
-  // top-5 convenience event (dashboard listens)
-  function notifyDashboard() {
-    const all = loadTasks();
-    window.dispatchEvent(new CustomEvent('tasks:updated', { detail: { tasks: all } }));
-  }
-
-  // bindings
-  function bindUI() {
-    const addBtn = document.getElementById('addCustomTaskBtn');
-    const input = document.getElementById('newTaskInput');
-    const saveBtn = document.getElementById('saveTasksBtn');
-
-    addBtn.addEventListener('click', () => {
-      const txt = input.value.trim();
-      if (!txt) return alert('Enter a task name');
-      addCustomTask(txt);
-      input.value = '';
-      notifyDashboard();
-    });
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { addBtn.click(); }
-    });
-
-    saveBtn.addEventListener('click', () => {
-      // explicit save (redundant since each change saves), but keep for UX
-      const all = loadTasks();
-      saveTasks(all);
-      alert('Tasks saved');
-      notifyDashboard();
-    });
-  }
-
-  // Initialize
-  document.addEventListener('DOMContentLoaded', () => {
-    loadTasks();      // ensure seeded
-    renderManage();
-    renderSaved();
-    bindUI();
+    popularContainer.appendChild(col);
   });
 
-  // react to external storage changes (other tabs or code)
-  window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEY) {
-      renderManage();
-      renderSaved();
-    }
+  // Existing custom tasks from DB = saved tasks that are not in popular list
+  const popularTitlesSet = new Set(popularData.map((p) => p.title));
+  const customTitlesFromDB = new Set(
+    savedTasks
+      .map((t) => t.title)
+      .filter((title) => !popularTitlesSet.has(title))
+  );
+
+  // Merge DB custom titles + drafts
+  const allCustomTitles = new Set([...customTitlesFromDB, ...customDraftTitles]);
+
+  allCustomTitles.forEach((title) => {
+    const isSelected = stagedTitles.has(title);
+    const col = document.createElement("div");
+    col.className = "col-12";
+
+    col.innerHTML = `
+      <div class="task-item border rounded p-2 d-flex justify-content-between align-items-center">
+        <span>${title}</span>
+        <button
+          type="button"
+          class="btn btn-sm ${isSelected ? "btn-success" : "btn-outline-success"} task-select-btn"
+          data-title="${title}"
+        >
+          ${isSelected ? "Selected" : "Select"}
+        </button>
+      </div>
+    `;
+
+    customContainer.appendChild(col);
   });
 
-})();
+  // attach button handlers
+  document.querySelectorAll(".task-select-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const title = btn.dataset.title;
+      toggleStagedTitle(title, btn);
+    });
+  });
+}
+
+function toggleStagedTitle(title, btn) {
+  if (stagedTitles.has(title)) {
+    stagedTitles.delete(title);
+    btn.textContent = "Select";
+    btn.classList.remove("btn-success");
+    btn.classList.add("btn-outline-success");
+  } else {
+    stagedTitles.add(title);
+    btn.textContent = "Selected";
+    btn.classList.remove("btn-outline-success");
+    btn.classList.add("btn-success");
+  }
+}
+
+// ------------ Add custom task (staged only) -------------
+
+function onAddCustomTask() {
+  const input = document.getElementById("newTaskInput");
+  if (!input) return;
+
+  const title = (input.value || "").trim();
+  if (!title) return;
+
+  customDraftTitles.add(title);
+  stagedTitles.add(title);
+  input.value = "";
+  renderManageTab();
+}
+
+// ------------ Save Tasks (write staged state to DB) -------------
+
+function onSaveTasks() {
+  const titles = Array.from(stagedTitles);
+  if (titles.length === 0) {
+    // if user cleared everything, we still sync to delete any existing tasks
+    // (so allow empty list)
+  }
+
+  const params = new URLSearchParams();
+  titles.forEach((t) => params.append("titles[]", t));
+
+  fetch("/api/tasks/save-selection/", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": csrftoken,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params.toString(),
+  })
+    .then((res) => res.json())
+    .then(() => {
+      // after saving, reload from DB so Saved tab + Manage are fresh
+      loadTasks();
+    })
+    .catch((err) => console.error("Error saving tasks:", err));
+}
+
+// ------------ Saved tab rendering -------------
+
+function renderSavedTab() {
+  const savedList = document.getElementById("savedTasksList");
+  if (!savedList) return;
+
+  savedList.innerHTML = "";
+
+  if (savedTasks.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "list-group-item text-muted";
+    empty.textContent = "No saved tasks yet. Select some from the Manage tab.";
+    savedList.appendChild(empty);
+    return;
+  }
+
+  savedTasks.forEach((task) => {
+    const div = document.createElement("div");
+    div.className = "list-group-item";
+
+    div.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center">
+        <label class="form-check-label mb-0">
+          <input type="checkbox"
+                 class="form-check-input me-2 saved-task-toggle"
+                 data-id="${task.id}"
+                 ${task.completed ? "checked" : ""}>
+          ${task.title}
+        </label>
+
+        <button type="button"
+                class="btn btn-danger btn-sm saved-task-remove"
+                data-id="${task.id}">
+          Remove
+        </button>
+      </div>
+    `;
+
+    savedList.appendChild(div);
+  });
+
+  // Toggle completion
+  savedList.querySelectorAll(".saved-task-toggle").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const id = cb.dataset.id;
+      fetch(`/api/tasks/toggle/${id}/`, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          // we could update local state; simpler to just reload saved list
+          loadTasks();
+        })
+        .catch((err) =>
+          console.error("Error toggling task from Saved tab:", err)
+        );
+    });
+  });
+
+  // Remove task
+  savedList.querySelectorAll(".saved-task-remove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      fetch(`/api/tasks/delete/${id}/`, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+      })
+        .then((res) => res.json())
+        .then(() => {
+          loadTasks();
+        })
+        .catch((err) =>
+          console.error("Error deleting task from Saved tab:", err)
+        );
+    });
+  });
+}
