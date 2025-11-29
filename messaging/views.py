@@ -1,153 +1,244 @@
 # messaging/views.py
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-
+from django.contrib.auth.models import User
+from django.http import HttpResponseForbidden
+from django.db import models  # needed for models.Q
 from .models import Message
 from .forms import MessageForm
 
 
-# 📥 INBOX
+# -------------------------
+# Helper: ensure user can view message
+# -------------------------
+def user_can_access(msg, user):
+    """
+    Superusers can access all messages.
+    Normal users can access messages they sent or received.
+    """
+    if user.is_superuser:
+        return True
+    return msg.sender == user or msg.recipient == user
+
+
+# -------------------------
+# Inbox
+# -------------------------
 @login_required
 def inbox(request):
-    messages = Message.objects.filter(
-        recipient=request.user,
-        archived=False,
-        deleted_by_recipient=False
-    ).order_by("-created_at")
+    """
+    Superusers: all non-archived, non-deleted messages (as recipient).
+    Normal users: messages where they are the recipient.
+    """
+    if request.user.is_superuser:
+        qs = Message.objects.filter(
+            archived=False,
+            deleted_by_recipient=False,
+        )
+    else:
+        qs = Message.objects.filter(
+            recipient=request.user,
+            archived=False,
+            deleted_by_recipient=False,
+        )
 
-    return render(request, "messaging/inbox.html", {"messages": messages})
+    messages_qs = qs.order_by("-created_at")
+
+    return render(
+        request,
+        "messaging/inbox.html",
+        {"messages": messages_qs, "folder": "inbox"},
+    )
 
 
-# 📤 SENT
+# -------------------------
+# Sent
+# -------------------------
 @login_required
-def sent_messages(request):
-    messages = Message.objects.filter(
-        sender=request.user,
-        deleted_by_sender=False
-    ).order_by("-created_at")
+def sent(request):
+    """
+    Superusers: all messages not deleted_by_sender.
+    Normal users: messages they sent.
+    """
+    if request.user.is_superuser:
+        qs = Message.objects.filter(deleted_by_sender=False)
+    else:
+        qs = Message.objects.filter(
+            sender=request.user, deleted_by_sender=False
+        )
 
-    return render(request, "messaging/sent.html", {"messages": messages})
+    messages_qs = qs.order_by("-created_at")
+
+    return render(
+        request,
+        "messaging/sent.html",
+        {"messages": messages_qs, "folder": "sent"},
+    )
 
 
-# 🗄 ARCHIVED
+# -------------------------
+# Archived
+# -------------------------
 @login_required
-def archived_messages(request):
-    messages = Message.objects.filter(
-        archived=True
-    ).filter(
-        Q(sender=request.user, deleted_by_sender=False) |
-        Q(recipient=request.user, deleted_by_recipient=False)
-    ).order_by("-created_at")
+def archived(request):
+    """
+    Superusers: all archived messages.
+    Normal users: archived messages they received.
+    """
+    if request.user.is_superuser:
+        qs = Message.objects.filter(
+            archived=True,
+            deleted_by_recipient=False,
+        )
+    else:
+        qs = Message.objects.filter(
+            recipient=request.user,
+            archived=True,
+            deleted_by_recipient=False,
+        )
 
-    return render(request, "messaging/archived.html", {"messages": messages})
+    messages_qs = qs.order_by("-created_at")
+
+    return render(
+        request,
+        "messaging/archived.html",
+        {"messages": messages_qs, "folder": "archive"},
+    )
 
 
-# 🗑 TRASH
+# -------------------------
+# Trash
+# -------------------------
 @login_required
 def trash(request):
-    messages = Message.objects.filter(
-        Q(sender=request.user, deleted_by_sender=True) |
-        Q(recipient=request.user, deleted_by_recipient=True)
-    ).order_by("-created_at")
+    """
+    Superusers: all messages that are flagged deleted by someone.
+    Normal users: messages they sent/received that they deleted.
+    """
+    if request.user.is_superuser:
+        qs = Message.objects.filter(
+            models.Q(deleted_by_sender=True) | models.Q(deleted_by_recipient=True)
+        )
+    else:
+        qs = Message.objects.filter(
+            models.Q(sender=request.user, deleted_by_sender=True)
+            | models.Q(recipient=request.user, deleted_by_recipient=True)
+        )
 
-    return render(request, "messaging/trash.html", {"messages": messages})
+    messages_qs = qs.order_by("-created_at")
+
+    return render(
+        request,
+        "messaging/trash.html",
+        {"messages": messages_qs, "folder": "trash"},
+    )
 
 
-# 📝 COMPOSE
+# -------------------------
+# Compose
+# -------------------------
 @login_required
 def compose(request):
+    """
+    Any authenticated user can compose a message.
+    """
     if request.method == "POST":
         form = MessageForm(request.POST, request.FILES)
         if form.is_valid():
             msg = form.save(commit=False)
             msg.sender = request.user
             msg.save()
-            return redirect("sent_messages")
+            return redirect("sent")
     else:
         form = MessageForm()
+
+    # Don't allow sending to yourself
+    form.fields["recipient"].queryset = User.objects.exclude(id=request.user.id)
 
     return render(request, "messaging/compose.html", {"form": form})
 
 
-# 🔁 REPLY
-@login_required
-def reply_message(request, pk):
-    original = get_object_or_404(
-        Message,
-        Q(pk=pk) & (Q(sender=request.user) | Q(recipient=request.user))
-    )
-
-    reply_to = original.sender if request.user == original.recipient else original.recipient
-
-    if request.method == "POST":
-        form = MessageForm(request.POST, request.FILES)
-        if form.is_valid():
-            msg = form.save(commit=False)
-            msg.sender = request.user
-            msg.recipient = reply_to
-            msg.save()
-            return redirect("sent_messages")
-    else:
-        initial = {
-            "recipient": reply_to,
-            "subject": f"Re: {original.subject}",
-            "body": f"\n\n--- Original Message ---\n{original.body}",
-        }
-        form = MessageForm(initial=initial)
-
-    return render(request, "messaging/compose.html", {
-        "form": form,
-        "reply_to": reply_to,
-        "original": original,
-    })
-
-
-# 📄 MESSAGE DETAIL
+# -------------------------
+# Message Detail
+# -------------------------
 @login_required
 def message_detail(request, pk):
-    msg = get_object_or_404(
-        Message,
-        Q(pk=pk) & (Q(sender=request.user) | Q(recipient=request.user))
-    )
+    msg = get_object_or_404(Message, pk=pk)
 
-    # Mark as read
+    if not user_can_access(msg, request.user):
+        return HttpResponseForbidden("Not allowed")
+
+    # Mark as read only if recipient (or superuser acting as recipient)
     if msg.recipient == request.user and not msg.is_read:
         msg.is_read = True
         msg.save()
 
-    return render(request, "messaging/message_detail.html", {"msg": msg})
+    return render(request, "messaging/message_detail.html", {"message": msg})
 
 
-# 🗑 SOFT DELETE
+# -------------------------
+# Archive / Unarchive
+# -------------------------
 @login_required
-def message_delete(request, pk):
-    msg = get_object_or_404(
-        Message,
-        Q(pk=pk) & (Q(sender=request.user) | Q(recipient=request.user))
-    )
+def toggle_archive(request, pk):
+    msg = get_object_or_404(Message, pk=pk)
 
-    if request.user == msg.sender:
+    # Recipient or superuser
+    if not (request.user.is_superuser or msg.recipient == request.user):
+        return HttpResponseForbidden("Not allowed")
+
+    msg.archived = not msg.archived
+    msg.save()
+    return redirect("inbox")
+
+
+# -------------------------
+# Soft Delete
+# -------------------------
+@login_required
+def delete_message(request, pk):
+    msg = get_object_or_404(Message, pk=pk)
+
+    # Sender side delete
+    if msg.sender == request.user or request.user.is_superuser:
         msg.deleted_by_sender = True
-    if request.user == msg.recipient:
+
+    # Recipient side delete
+    if msg.recipient == request.user or request.user.is_superuser:
         msg.deleted_by_recipient = True
+
+    msg.save()
+    return redirect(request.GET.get("next", "inbox"))
+
+
+# -------------------------
+# Restore from trash
+# -------------------------
+@login_required
+def restore_message(request, pk):
+    msg = get_object_or_404(Message, pk=pk)
+
+    if not user_can_access(msg, request.user):
+        return HttpResponseForbidden("Not allowed")
+
+    if msg.sender == request.user or request.user.is_superuser:
+        msg.deleted_by_sender = False
+    if msg.recipient == request.user or request.user.is_superuser:
+        msg.deleted_by_recipient = False
 
     msg.save()
     return redirect("trash")
 
 
-# ♻ RESTORE
+# -------------------------
+# Permanent Delete
+# -------------------------
 @login_required
-def message_restore(request, pk):
-    msg = get_object_or_404(
-        Message,
-        Q(pk=pk) & (Q(sender=request.user) | Q(recipient=request.user))
-    )
+def permanent_delete(request, pk):
+    msg = get_object_or_404(Message, pk=pk)
 
-    if request.user == msg.sender:
-        msg.deleted_by_sender = False
-    if request.user == msg.recipient:
-        msg.deleted_by_recipient = False
+    if not user_can_access(msg, request.user):
+        return HttpResponseForbidden("Not allowed")
 
-    msg.save()
+    msg.delete()
     return redirect("trash")

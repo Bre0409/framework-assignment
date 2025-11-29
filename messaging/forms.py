@@ -8,6 +8,7 @@ class MessageForm(forms.ModelForm):
         model = Message
         fields = ["recipient", "subject", "body", "attachment"]
         widgets = {
+            "recipient": forms.Select(attrs={"class": "form-control"}),
             "subject": forms.TextInput(attrs={"class": "form-control"}),
             "body": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
         }

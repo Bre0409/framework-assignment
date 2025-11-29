@@ -86,10 +86,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ----------------------------
-  // 5. Sidebar Collapse
+  // 5. Sidebar Collapse (main sidebar)
   // ----------------------------
   const sidebar = document.querySelector(".sidebar");
   const sidebarToggle = document.getElementById("sidebarToggle");
+
   if (sidebar && sidebarToggle) {
     if (localStorage.getItem("sidebarCollapsed") === "1") {
       sidebar.classList.add("collapsed");
@@ -105,9 +106,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ----------------------------
-  // 6. Weekly Chart Helpers
-  // ----------------------------
+// Messaging Sidebar Toggle (Final Working Version)
+// ----------------------------
+const messagesToggle = document.getElementById("messagesToggle");
+const messagesGroup = document.getElementById("messagesGroup");
 
+if (messagesToggle && messagesGroup) {
+    messagesToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        // Toggle the CSS class controlling visibility
+        messagesGroup.classList.toggle("show");
+
+        // Rotate the chevron icon
+        const chevron = messagesToggle.querySelector(".chevron-icon");
+        if (chevron) {
+            chevron.classList.toggle("open");
+        }
+    });
+}
+
+  // ----------------------------
+  // 7. Weekly Chart Helpers
+  // ----------------------------
   function todayIndex() {
     return (new Date().getDay() + 6) % 7; // Monday = 0
   }
@@ -148,12 +169,12 @@ document.addEventListener("DOMContentLoaded", () => {
     weeklyChart.update();
   }
 
-  // Goal + Task Events
+  // Events from dashboard.js + goals.js
   document.addEventListener("goalProgressChanged", updateWeeklyChart);
   document.addEventListener("dashboardTasksChanged", updateWeeklyChart);
 
   // ----------------------------
-  // 7. Weekly Chart Creation
+  // 8. Weekly Chart Creation
   // ----------------------------
   const ctx = document.getElementById("progressChart");
   if (ctx && window.Chart) {
@@ -203,7 +224,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ctx._weeklyChartInstance = weeklyChart;
 
-    // First sync
     updateWeeklyChart();
   }
 });

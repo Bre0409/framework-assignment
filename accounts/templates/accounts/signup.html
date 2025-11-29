@@ -1,45 +1,21 @@
-{% extends 'dashboard/base.html' %}
-{% block title %}Sign Up{% endblock %}
-{% load static %}
-
+{% extends "dashboard/base.html" %}
 {% block content %}
-<div class="container mt-5" style="max-width: 500px;">
-  <div class="card shadow-sm p-4">
+<div class="container mt-4">
 
-    <h3 class="fw-bold mb-3 text-center">Create Account</h3>
+  <h3 class="fw-bold text-center mb-4">Create Account</h3>
 
-    {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-danger">{{ message }}</div>
-    {% endfor %}
-    {% endif %}
-
+  <div class="card dashboard-card p-4 mx-auto" style="max-width: 500px;">
     <form method="POST">
       {% csrf_token %}
+      {{ form.as_p }}
 
-      <div class="mb-3">
-        <label class="form-label">Username</label>
-        <input type="text" name="username" class="form-control" required>
+      <button class="btn btn-success w-100">Sign Up</button>
+
+      <div class="text-center mt-3">
+        <a href="{% url 'login' %}" class="text-info">Already have an account?</a>
       </div>
-
-      <div class="mb-3">
-        <label class="form-label">Email (optional)</label>
-        <input type="email" name="email" class="form-control">
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Password</label>
-        <input type="password" name="password" class="form-control" required>
-      </div>
-
-      <button type="submit" class="btn btn-primary w-100">Sign Up</button>
-
-      <p class="text-center mt-3">
-        Already have an account?
-        <a href="{% url 'login' %}">Login</a>
-      </p>
-
     </form>
   </div>
+
 </div>
 {% endblock %}

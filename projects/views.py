@@ -1,114 +1,128 @@
 # projects/views.py
-
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.contrib import messages
 
-from .models import Project, ProjectMessage
-from .forms import ProjectForm, ProjectMessageForm
+from .models import Project
+from .forms import ProjectForm
 
 
-# ---------------------------------------
-# PROJECT LIST (only user’s own projects)
-# ---------------------------------------
+# -----------------------------
+# LIST
+# -----------------------------
 @login_required
 def project_list(request):
-    projects = Project.objects.filter(owner=request.user).order_by("-created_at")
+    """
+    Superusers: see ALL projects.
+    Normal users: see projects they own or are a stakeholder on.
+    """
+    if request.user.is_superuser:
+        projects = Project.objects.all()
+    else:
+        projects = (
+            Project.objects.filter(owner=request.user)
+            | Project.objects.filter(stakeholders=request.user)
+        ).distinct()
+
     return render(request, "projects/project_list.html", {"projects": projects})
 
 
-# ---------------------------------------
-# CREATE PROJECT
-# ---------------------------------------
+# -----------------------------
+# DETAIL
+# -----------------------------
+@login_required
+def project_detail(request, pk):
+    """
+    Superusers: can open any project.
+    Normal users: only if owner or stakeholder.
+    """
+    project = get_object_or_404(Project, pk=pk)
+
+    if not (
+        request.user.is_superuser
+        or project.owner == request.user
+        or request.user in project.stakeholders.all()
+    ):
+        messages.error(request, "You do not have permission to view this project.")
+        return redirect("project_list")
+
+    return render(request, "projects/project_detail.html", {"project": project})
+
+
+# -----------------------------
+# CREATE
+# -----------------------------
 @login_required
 def project_create(request):
+    """
+    Any authenticated user can create a project.
+    The creator becomes the owner.
+    """
     if request.method == "POST":
         form = ProjectForm(request.POST)
         if form.is_valid():
             project = form.save(commit=False)
             project.owner = request.user
             project.save()
+            form.save_m2m()
+            messages.success(request, "Project created successfully.")
             return redirect("project_list")
     else:
         form = ProjectForm()
 
-    return render(request, "projects/project_form.html", {
-        "form": form,
-        "title": "Create Project",
-    })
+    return render(
+        request,
+        "projects/project_form.html",
+        {"form": form, "title": "Create Project"},
+    )
 
 
-# ---------------------------------------
-# EDIT PROJECT (owner only)
-# ---------------------------------------
+# -----------------------------
+# UPDATE
+# -----------------------------
 @login_required
 def project_edit(request, pk):
-    project = get_object_or_404(Project, pk=pk, owner=request.user)
+    """
+    Superusers: can edit any project.
+    Normal users: only the owner.
+    """
+    project = get_object_or_404(Project, pk=pk)
+
+    if not (request.user.is_superuser or project.owner == request.user):
+        messages.error(request, "Only the project owner can edit this project.")
+        return redirect("project_detail", pk=pk)
 
     if request.method == "POST":
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
             form.save()
-            return redirect("project_detail", pk=project.pk)
+            messages.success(request, "Project updated successfully.")
+            return redirect("project_detail", pk=pk)
     else:
         form = ProjectForm(instance=project)
 
-    return render(request, "projects/project_form.html", {
-        "form": form,
-        "title": "Edit Project",
-    })
+    return render(
+        request,
+        "projects/project_form.html",
+        {"form": form, "title": "Edit Project"},
+    )
 
 
-# ---------------------------------------
-# DELETE PROJECT (owner only)
-# ---------------------------------------
+# -----------------------------
+# DELETE
+# -----------------------------
 @login_required
 def project_delete(request, pk):
-    project = get_object_or_404(Project, pk=pk, owner=request.user)
+    """
+    Superusers: can delete any project.
+    Normal users: only the owner.
+    """
+    project = get_object_or_404(Project, pk=pk)
+
+    if not (request.user.is_superuser or project.owner == request.user):
+        messages.error(request, "Only the project owner can delete this project.")
+        return redirect("project_detail", pk=pk)
+
     project.delete()
+    messages.success(request, "Project deleted.")
     return redirect("project_list")
-
-
-# ---------------------------------------
-# PROJECT DETAIL + PROJECT MESSAGES
-# ---------------------------------------
-@login_required
-def project_detail(request, pk):
-    project = get_object_or_404(Project, pk=pk, owner=request.user)
-
-    # Only show unarchived messages
-    messages = project.messages.filter(archived=False).order_by("-created_at")
-
-    if request.method == "POST":
-        # Create a new message for the project
-        form = ProjectMessageForm(request.POST)
-        if form.is_valid():
-            msg = form.save(commit=False)
-            msg.project = project
-            msg.sender = request.user
-            msg.save()
-            return redirect("project_detail", pk=project.pk)
-    else:
-        form = ProjectMessageForm()
-
-    return render(request, "projects/project_detail.html", {
-        "project": project,
-        "messages": messages,
-        "message_form": form,
-    })
-
-
-# ---------------------------------------
-# ARCHIVE PROJECT MESSAGE
-# ---------------------------------------
-@login_required
-def project_message_archive(request, pk):
-    msg = get_object_or_404(ProjectMessage, pk=pk)
-
-    # Security: Only project owner may archive
-    if msg.project.owner != request.user:
-        return HttpResponseForbidden("Not allowed to archive this message.")
-
-    msg.archived = True
-    msg.save()
-    return redirect("project_detail", pk=msg.project.pk)

@@ -1,129 +1,86 @@
-from django.shortcuts import render, redirect
+# accounts/views.py
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm, AuthenticationForm
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from .forms import UserUpdateForm, ProfileUpdateForm
+from django.contrib.sites.shortcuts import get_current_site
+from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
+from .forms import SignupForm, ProfileForm
+from .tokens import account_activation_token
+
+
+# -------------------------------
+# SIGNUP (with email activation)
+# -------------------------------
 def signup_view(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+    if request.method == "POST":
+        form = SignupForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            # optionally allow email capture if provided in form data
-            email = request.POST.get('email')
-            if email:
-                user.email = email
-                user.save()
-            login(request, user)
-            messages.success(request, "✅ Account created — welcome!")
-            return redirect('home')
-        else:
-            # show form errors through messages or passed form
-            for field, errs in form.errors.items():
-                for e in errs:
-                    messages.error(request, f"{field}: {e}")
-            return redirect('signup')
+            user = form.save(commit=False)
+            user.is_active = False   # require activation
+            user.set_password(form.cleaned_data["password1"])
+            user.save()
 
-    form = UserCreationForm()
-    return render(request, 'accounts/signup.html', {'form': form})
+            # Send activation email
+            current_site = get_current_site(request)
+            subject = "Activate Your Account"
+            message = render_to_string("accounts/activation_email.html", {
+                "user": user,
+                "domain": current_site.domain,
+                "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                "token": account_activation_token.make_token(user),
+            })
+            user.email_user(subject, message)
 
+            messages.success(
+                request,
+                "Account created! Please check your email to activate your account."
+            )
+            return redirect("login")
+    else:
+        form = SignupForm()
 
-def login_view(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect('home')
-        else:
-            messages.error(request, "❌ Invalid username or password.")
-            return redirect('login')
-
-    form = AuthenticationForm()
-    return render(request, 'accounts/login.html', {'form': form})
+    return render(request, "accounts/signup.html", {"form": form})
 
 
-def logout_view(request):
-    logout(request)
-    return redirect('login')
+# -------------------------------
+# ACTIVATE ACCOUNT (Option A: redirect to login)
+# -------------------------------
+def activate_account(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except Exception:
+        user = None
+
+    if user and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+        messages.success(request, "Your account is now activated! Please log in.")
+        return redirect("login")
+
+    messages.error(request, "Activation link is invalid or expired.")
+    return redirect("login")
 
 
+# -------------------------------
+# PROFILE VIEW
+# -------------------------------
 @login_required
 def profile_view(request):
-    # Ensure profile exists (signals handle creation on user creation, but safe-check here)
-    try:
-        profile = request.user.profile
-    except Exception:
-        from .models import Profile
-        profile, _ = Profile.objects.get_or_create(user=request.user)
+    profile = request.user.profile
 
-    user_form = UserUpdateForm(instance=request.user)
-    profile_form = ProfileUpdateForm(instance=profile)
-    password_form = PasswordChangeForm(request.user)
-
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        if action == 'update_basic':
-            user_form = UserUpdateForm(request.POST, instance=request.user)
-            profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
-            if user_form.is_valid() and profile_form.is_valid():
-                user_form.save()
-                profile_form.save()
-                messages.success(request, "✅ Profile updated successfully!")
-                return redirect('profile')
-            else:
-                messages.error(request, "Please correct the errors below.")
-        elif action == 'change_password':
-            form = PasswordChangeForm(request.user, request.POST)
-            if form.is_valid():
-                user = form.save()
-                update_session_auth_hash(request, user)
-                messages.success(request, "🔐 Password changed successfully.")
-                return redirect('profile')
-            else:
-                messages.error(request, "❌ Please correct the errors in password form.")
-        elif action == 'delete_account':
-            confirm = request.POST.get('confirm_delete', '').strip()
-            if confirm == 'DELETE':
-                user = request.user
-                logout(request)
-                user.delete()
-                messages.success(request, "🗑️ Your account has been deleted.")
-                return redirect('signup')
-            else:
-                messages.error(request, "Type DELETE to confirm account deletion.")
-
-    context = {
-        "user_form": user_form,
-        "profile_form": profile_form,
-        "password_form": password_form,
-    }
-    return render(request, 'accounts/profile.html', context)
-
-
-@login_required
-def change_password(request):
-    # kept for compatibility with older templates if they post to a dedicated URL
     if request.method == "POST":
-        form = PasswordChangeForm(request.user, request.POST)
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)
-            messages.success(request, "🔐 Password changed successfully!")
+            form.save()
+            messages.success(request, "Profile updated.")
             return redirect("profile")
-        else:
-            messages.error(request, "❌ Please correct the errors below.")
-    return redirect("profile")
+    else:
+        form = ProfileForm(instance=profile)
 
-
-@login_required
-def delete_account(request):
-    if request.method == "POST":
-        user = request.user
-        logout(request)
-        user.delete()
-        messages.success(request, "🗑️ Your account has been deleted.")
-        return redirect("signup")
-    return redirect("profile")
+    return render(request, "accounts/profile.html", {"form": form})
