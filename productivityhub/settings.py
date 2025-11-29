@@ -14,8 +14,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # =========================================================
 
 SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "replace-this-before-production"
+    SECRET_KEY = 'your-secret-key-here'  
+DEBUG = True
 )
 
 
