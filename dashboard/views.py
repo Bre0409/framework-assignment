@@ -1,17 +1,16 @@
-# dashboard/views.py
-
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST, require_GET
 from django.utils import timezone
 from django.db import models
+import json
 
 from .models import Task, Goal, Note
 
 
 # ---------------------------------------------------------
-# Default lists (seed data)
+# Default lists (used at first login only – seeding)
 # ---------------------------------------------------------
 
 POPULAR_GOALS = [
@@ -46,14 +45,25 @@ POPULAR_TASKS = [
 
 
 # ---------------------------------------------------------
-# Seeding defaults (ONLY tasks; goals use POPULAR_GOALS list)
+# Seeding defaults (only on PAGE views)
 # ---------------------------------------------------------
 
 def seed_user_defaults(user):
     """
-    Called from page views (home/tasks) to ensure the user has some data.
-    We ONLY seed tasks here; goals are built from POPULAR_GOALS dynamically.
+    Creates initial records ONLY if user has none.
     """
+    if not user.goals.exists():
+        for i, g in enumerate(POPULAR_GOALS):
+            Goal.objects.create(
+                user=user,
+                title=g["title"],
+                goal_type=g.get("goal_type", "static"),
+                target_value=g.get("target_value"),
+                current_value=0,
+                order=i,
+                selected=False,
+            )
+
     if not user.tasks.exists():
         for i, t in enumerate(POPULAR_TASKS):
             Task.objects.create(
@@ -65,14 +75,38 @@ def seed_user_defaults(user):
 
 
 # ---------------------------------------------------------
+# NEW — Sync DB with NEWLY added POPULAR_GOALS
+# ---------------------------------------------------------
+
+def sync_popular_goals(user):
+    """
+    Ensures that if you add new POPULAR_GOALS later,
+    they appear in each user's DB.
+    """
+    existing_titles = set(user.goals.values_list("title", flat=True))
+    new_goals = [g for g in POPULAR_GOALS if g["title"] not in existing_titles]
+
+    if new_goals:
+        max_order = user.goals.aggregate(models.Max("order"))["order__max"] or 0
+
+        for i, g in enumerate(new_goals, start=max_order + 1):
+            Goal.objects.create(
+                user=user,
+                title=g["title"],
+                goal_type=g.get("goal_type", "static"),
+                target_value=g.get("target_value"),
+                current_value=0,
+                order=i,
+                selected=False,
+            )
+
+
+# ---------------------------------------------------------
 # PAGES
 # ---------------------------------------------------------
 
 @login_required
 def home(request):
-    """
-    Dashboard: show top 5 saved goals and top 5 tasks.
-    """
     seed_user_defaults(request.user)
 
     top_goals_qs = request.user.goals.filter(selected=True).order_by("order")[:5]
@@ -80,7 +114,7 @@ def home(request):
         {
             "id": g.id,
             "title": g.title,
-            "progress": g.progress_percentage(),
+            "progress": g.progress_percentage() if hasattr(g, "progress_percentage") else 0,
         }
         for g in top_goals_qs
     ]
@@ -103,18 +137,13 @@ def home(request):
 
 @login_required
 def goals(request):
-    """
-    Goals selection / management page.
-    No seeding here — the page uses POPULAR_GOALS + DB-backed goals.
-    """
+    seed_user_defaults(request.user)
+    sync_popular_goals(request.user)  # <-- FIX: sync new default goals
     return render(request, "dashboard/goals.html")
 
 
 @login_required
 def tasks(request):
-    """
-    Tasks selection / management page.
-    """
     seed_user_defaults(request.user)
     return render(request, "dashboard/tasks.html")
 
@@ -125,7 +154,7 @@ def settings_view(request):
 
 
 # ---------------------------------------------------------
-# Helpers
+# Helper serializers
 # ---------------------------------------------------------
 
 def _goal_to_dict(g: Goal):
@@ -133,9 +162,9 @@ def _goal_to_dict(g: Goal):
         "id": g.id,
         "title": g.title,
         "goal_type": g.goal_type,
-        "progress": g.progress_percentage(),
-        "completed": g.completed,
-        "selected": g.selected,
+        "progress": g.progress_percentage() if hasattr(g, "progress_percentage") else 0,
+        "completed": getattr(g, "completed", False),
+        "selected": getattr(g, "selected", False),
         "order": g.order,
     }
 
@@ -153,129 +182,80 @@ def _note_to_dict(n: Note):
     return {
         "id": n.id,
         "text": n.text,
+        "completed": getattr(n, "completed", False),
         "created_at": n.created_at.isoformat(),
     }
 
 
 # ---------------------------------------------------------
-# GOALS API  (staged selection + save button)
+# GOALS API
 # ---------------------------------------------------------
 
 @login_required
 @require_GET
 def goals_data(request):
-    """
-    Returns:
-      - popular: always 20 POPULAR_GOALS, with id/selected if DB goal exists
-      - custom: all user-created goals whose titles are not in POPULAR_GOALS
-      - saved: ALL goals where selected=True
+    user = request.user
+    user_goals = user.goals.order_by("order", "created_at")
 
-    This is used by goals.js to build:
-      - Popular Goals
-      - Your Custom Goals
-      - Saved Goals
-    """
-    user_goals = list(request.user.goals.all().order_by("order", "created_at"))
-    by_title = {g.title: g for g in user_goals}
     popular_titles = {g["title"] for g in POPULAR_GOALS}
 
-    # Build popular goals list from static list + DB matches
     popular = []
-    for seed in POPULAR_GOALS:
-        title = seed["title"]
-        existing = by_title.get(title)
-        if existing:
-            popular.append(_goal_to_dict(existing))
+    custom = []
+    saved = []
+
+    for g in user_goals:
+        item = {
+            "id": g.id,
+            "title": g.title,
+            "goal_type": g.goal_type,
+            "progress": g.progress_percentage(),
+            "completed": g.completed,
+            "selected": g.selected,
+            "order": g.order,
+            "target_value": g.target_value,
+        }
+
+        if g.selected:
+            saved.append(item)
+
+        if g.title in popular_titles:
+            popular.append(item)
         else:
-            # synthetic item (not yet in DB)
-            popular.append({
-                "id": None,
-                "title": title,
-                "goal_type": seed.get("goal_type", "static"),
-                "progress": 0,
-                "completed": False,
-                "selected": False,
-                "order": None,
-            })
-
-    # Custom goals: anything in DB not in POPULAR list
-    custom = [
-        _goal_to_dict(g)
-        for g in user_goals
-        if g.title not in popular_titles
-    ]
-
-    # Saved goals = selected=True
-    saved = [
-        _goal_to_dict(g)
-        for g in user_goals
-        if g.selected
-    ]
+            custom.append(item)
 
     return JsonResponse({
         "popular": popular,
         "custom": custom,
-        "saved": saved,
+        "saved": saved
     })
+@login_required
+@require_POST
+def goal_toggle_select(request, pk):
+    """
+    Toggle selected/unselected state for a goal.
+    EXACT match to tasks_toggle logic.
+    """
+    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+    goal.selected = not goal.selected
+    goal.save()
+    return JsonResponse({"ok": True, "selected": goal.selected})
 
 
 @login_required
 @require_POST
 def goals_save_selection(request):
-    """
-    Called when user clicks 'Save Goals' on the goals page.
+    raw_ids = request.POST.getlist("selected_ids[]") or request.POST.getlist("selected_ids")
 
-    Expects:
-      - goal_ids[]      => existing Goal IDs to mark selected
-      - custom_titles[] => new custom goals to create + select
+    try:
+        selected_ids = {int(x) for x in raw_ids}
+    except (TypeError, ValueError):
+        selected_ids = set()
 
-    Behavior:
-      - Clears 'selected' on all user's goals
-      - Marks given IDs as selected=True
-      - Creates new custom Goal rows for each title in custom_titles[]
-      - New goals are marked selected=True and appended at the end of ordering
-    """
-    # IDs of existing goals the user selected
-    raw_ids = request.POST.getlist("goal_ids[]", [])
-    goal_ids = []
-    for v in raw_ids:
-        try:
-            goal_ids.append(int(v))
-        except (TypeError, ValueError):
-            continue
+    qs = Goal.objects.filter(user=request.user)
 
-    # Titles of new custom goals
-    custom_titles = [
-        t.strip() for t in request.POST.getlist("custom_titles[]", []) if t.strip()
-    ]
-
-    # Reset all goals to unselected
-    request.user.goals.update(selected=False)
-
-    # Mark existing IDs
-    for pk in goal_ids:
-        try:
-            g = Goal.objects.get(pk=pk, user=request.user)
-            g.selected = True
-            g.save()
-        except Goal.DoesNotExist:
-            continue
-
-    # Create new custom goals and mark selected=True
-    if custom_titles:
-        max_order = (
-            request.user.goals.aggregate(models.Max("order")).get("order__max") or 0
-        )
-        for title in custom_titles:
-            max_order += 1
-            Goal.objects.create(
-                user=request.user,
-                title=title,
-                goal_type=Goal.GOAL_TYPE_STATIC,  # default; could be extended to pass type
-                selected=True,
-                order=max_order,
-                created_at=timezone.now(),
-            )
+    qs.update(selected=False)
+    if selected_ids:
+        qs.filter(id__in=selected_ids).update(selected=True)
 
     return JsonResponse({"ok": True})
 
@@ -283,48 +263,58 @@ def goals_save_selection(request):
 @login_required
 @require_POST
 def goal_update_progress(request, pk):
-    """
-    Update progress or completed state for a progress-type goal.
-    Called when user changes progress dropdown (0/25/50/75/100).
-    """
     goal = get_object_or_404(Goal, pk=pk, user=request.user)
 
-    if goal.goal_type != Goal.GOAL_TYPE_PROGRESS:
-        return HttpResponseBadRequest("Not a progress goal")
+    if goal.goal_type == "progress":
+        try:
+            progress = int(request.POST.get("progress", 0))
+        except (TypeError, ValueError):
+            return HttpResponseBadRequest("invalid progress")
 
-    try:
-        progress = int(request.POST.get("progress", 0))
-    except (TypeError, ValueError):
-        return HttpResponseBadRequest("invalid progress")
+        progress = max(0, min(100, progress))
 
-    progress = max(0, min(100, progress))
+        if goal.target_value:
+            goal.current_value = int((progress / 100.0) * goal.target_value)
+        else:
+            goal.current_value = progress
 
-    if goal.target_value:
-        goal.current_value = int((progress / 100.0) * goal.target_value)
+        goal.completed = progress >= 100
     else:
-        goal.current_value = progress
+        completed = request.POST.get("completed")
+        if completed is not None:
+            goal.completed = completed in ("1", "true", "True", "on")
 
-    goal.completed = progress >= 100
     goal.save()
-
     return JsonResponse({
         "ok": True,
-        "progress": goal.progress_percentage(),
+        "progress": goal.progress_percentage() if hasattr(goal, "progress_percentage") else 0,
         "completed": goal.completed,
     })
 
 
 @login_required
 @require_POST
-def goal_toggle(request, pk):
-    """
-    Toggle 'completed' for a static goal (checkbox) in the Saved tab.
-    'selected' (saved membership) is controlled by goals_save_selection.
-    """
-    goal = get_object_or_404(Goal, pk=pk, user=request.user)
-    goal.completed = not goal.completed
-    goal.save()
-    return JsonResponse({"ok": True, "completed": goal.completed})
+def goal_create(request):
+    title = request.POST.get("title", "").strip()
+    gtype = request.POST.get("goal_type", "static")
+
+    if not title:
+        return HttpResponseBadRequest("title required")
+
+    max_order = (
+        request.user.goals.aggregate(models.Max("order")).get("order__max") or 0
+    )
+
+    goal = Goal.objects.create(
+        user=request.user,
+        title=title,
+        goal_type=gtype,
+        order=max_order + 1,
+        created_at=timezone.now(),
+        selected=False,
+    )
+
+    return JsonResponse({"ok": True, "goal": _goal_to_dict(goal)})
 
 
 @login_required
@@ -338,14 +328,9 @@ def goal_delete(request, pk):
 @login_required
 @require_POST
 def goal_reorder(request):
-    """
-    Reorder saved goals based on list of IDs.
-    Expects POST['order[]'] = [id1, id2, ...]
-    """
     order_list = request.POST.getlist("order[]")
 
     if not order_list:
-        import json
         try:
             payload = json.loads(request.body.decode() or "{}")
             order_list = payload.get("order", [])
@@ -357,29 +342,19 @@ def goal_reorder(request):
             g = Goal.objects.get(pk=int(gid), user=request.user)
             g.order = idx
             g.save()
-        except Exception:
+        except (Goal.DoesNotExist, ValueError, TypeError):
             continue
 
     return JsonResponse({"ok": True})
 
 
 # ---------------------------------------------------------
-# TASKS API  (Save Tasks behaviour)
+# TASKS API
 # ---------------------------------------------------------
 
 @login_required
 @require_GET
 def tasks_list(request):
-    """
-    Returns:
-      - tasks: all currently saved tasks (DB)
-      - popular: metadata for popular tasks
-
-    Used by tasks.js to populate:
-      - Popular Tasks
-      - Custom Tasks
-      - Saved Tasks
-    """
     user_tasks_qs = request.user.tasks.all().order_by("order", "created_at")
     tasks_data = [_task_to_dict(t) for t in user_tasks_qs]
 
@@ -395,27 +370,23 @@ def tasks_list(request):
             "order_hint": existing.order if existing else idx,
         })
 
+    popular_titles = set(POPULAR_TASKS)
+    custom_tasks = [
+        _task_to_dict(t) for t in user_tasks_qs if t.title not in popular_titles
+    ]
+
     return JsonResponse({
         "tasks": tasks_data,
         "popular": popular,
+        "custom": custom_tasks,
     })
 
 
 @login_required
 @require_POST
 def tasks_save_selection(request):
-    """
-    Called when user presses 'Save Tasks'.
-
-    Expects titles[] containing *all* tasks the user wants saved
-    (popular + custom). Then:
-      - delete tasks whose titles are not in that list
-      - ensure each title in the list has a Task row
-      - update 'order' to match the incoming order
-    """
     titles = request.POST.getlist("titles[]", [])
 
-    # Normalize + dedupe while preserving order
     cleaned = []
     seen = set()
     for t in titles:
@@ -426,19 +397,17 @@ def tasks_save_selection(request):
             continue
         seen.add(t)
         cleaned.append(t)
+
     titles = cleaned
 
-    # Current tasks
     existing_tasks = list(Task.objects.filter(user=request.user))
     existing_by_title = {t.title: t for t in existing_tasks}
     keep_titles = set(titles)
 
-    # Delete those no longer selected
     for t in existing_tasks:
         if t.title not in keep_titles:
             t.delete()
 
-    # Ensure each selected title exists, and set order
     for idx, title in enumerate(titles):
         task = existing_by_title.get(title)
         if task:
@@ -457,10 +426,6 @@ def tasks_save_selection(request):
 @login_required
 @require_POST
 def task_toggle(request, pk):
-    """
-    Toggle completion for a saved task.
-    Used in Saved tab + dashboard.
-    """
     t = get_object_or_404(Task, pk=pk, user=request.user)
     t.completed = not t.completed
     t.save()
@@ -470,9 +435,6 @@ def task_toggle(request, pk):
 @login_required
 @require_POST
 def task_delete(request, pk):
-    """
-    Delete a single task from Saved tab.
-    """
     t = get_object_or_404(Task, pk=pk, user=request.user)
     t.delete()
     return JsonResponse({"ok": True})
@@ -483,14 +445,37 @@ def task_delete(request, pk):
 # ---------------------------------------------------------
 
 @login_required
+@require_GET
+def notes_list(request):
+    notes = Note.objects.filter(user=request.user).order_by("-created_at")
+    return JsonResponse({
+        "notes": [_note_to_dict(n) for n in notes]
+    })
+
+
+@login_required
 @require_POST
 def note_create(request):
-    text = request.POST.get("text", "").strip()
+    text = request.POST.get("text", "").trim()
     if not text:
         return HttpResponseBadRequest("text required")
 
-    note = Note.objects.create(user=request.user, text=text)
+    note = Note.objects.create(
+        user=request.user,
+        text=text,
+        completed=False,
+    )
+
     return JsonResponse({"ok": True, "note": _note_to_dict(note)})
+
+
+@login_required
+@require_POST
+def note_toggle(request, pk):
+    note = get_object_or_404(Note, pk=pk, user=request.user)
+    note.completed = not note.completed
+    note.save()
+    return JsonResponse({"ok": True, "completed": note.completed})
 
 
 @login_required

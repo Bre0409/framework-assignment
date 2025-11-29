@@ -254,6 +254,131 @@ input[type="range"] { touch-action: pan-x; -webkit-appearance: none; }
 /* minor saved goals gap */
 #savedGoalsList .list-group-item { display: flex; justify-content: space-between; align-items: center; }
 
+.top-five-highlight {
+  border: 2px solid gold !important;
+  background: rgba(255, 215, 0, 0.15) !important;
+}
+/* FORCE project link hover styling */
+.dashboard-card a.project-link {
+    color: #e0e0e0 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+}
+
+.dashboard-card a.project-link:hover {
+    color: #ffffff !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px;
+    filter: brightness(1.2) !important;
+}
+/* ============================= */
+/* SIDEBAR ENHANCEMENTS          */
+/* ============================= */
+
+/* Avatar + header */
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: 1.2rem;
+}
+
+/* Sidebar collapse behaviour */
+.sidebar {
+  transition: width 0.2s ease, padding 0.2s ease;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Hide text when collapsed */
+.sidebar.collapsed .user-name,
+.sidebar.collapsed .nav-text {
+  display: none;
+}
+
+/* Center icons when collapsed */
+.sidebar.collapsed .nav-link {
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-toggle i {
+  transform: rotate(180deg);
+}
+
+/* Toggle button */
+.sidebar-toggle {
+  padding: 4px 6px;
+}
+
+/* Nav icons animation */
+.nav-icon {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.nav-link:hover .nav-icon {
+  transform: translateX(2px);
+}
+
+/* Messages group */
+.sidebar-group-toggle {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar-group-toggle:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Chevron rotation */
+.sidebar-group-toggle .chevron-icon {
+  transition: transform 0.2s ease;
+}
+
+.sidebar-group-toggle.open .chevron-icon {
+  transform: rotate(180deg);
+}
+
+/* Submenu collapse */
+.sidebar-submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease;
+}
+
+.sidebar-submenu.show {
+  max-height: 400px; /* enough to show all items */
+}
+
+/* Submenu visual indent */
+.sidebar-submenu .sub-link {
+  padding-left: 2.5rem;
+  font-size: 0.95rem;
+}
+
+/* Unread badge */
+.inbox-badge {
+  font-size: 0.7rem;
+  min-width: 22px;
+  text-align: center;
+}
+/* Increase collapsed sidebar width by 10px */
+.sidebar.collapsed {
+    width: 100px !important;
+}
+
 /* ----------------------------- */
 /* RESPONSIVE */
 /* ----------------------------- */
@@ -267,4 +392,5 @@ input[type="range"] { touch-action: pan-x; -webkit-appearance: none; }
     margin-left: 0;
     padding: 20px;
   }
+  
 }

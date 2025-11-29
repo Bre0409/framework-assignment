@@ -1,279 +1,389 @@
-// dashboard/static/js/goals.js
+// static/js/goals.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  loadGoals();
+  // Only run on the Goals page
+  const popularContainer = document.getElementById("popularGoalsContainer");
+  const customContainer = document.getElementById("customGoalsContainer");
+  const savedList = document.getElementById("savedGoalsList");
 
-  const addBtn = document.getElementById("addCustomBtn");
-  const saveBtn = document.getElementById("saveGoalsBtn");
-
-  if (addBtn) addBtn.addEventListener("click", handleAddCustomGoal);
-  if (saveBtn) saveBtn.addEventListener("click", saveGoalSelection);
-});
-
-/* ---------------- CSRF Helper ---------------- */
-
-function getCSRF() {
-  const name = "csrftoken=";
-  return document.cookie
-    .split("; ")
-    .find((c) => c.startsWith(name))
-    ?.substring(name.length) || "";
-}
-
-const csrftoken = getCSRF();
-
-/* ---------------- State ---------------- */
-
-let popularGoals = [];
-let customGoals = [];
-let savedGoals = [];
-
-let stagedSelectedIds = new Set(); // user selection staging
-let stagedCustomDrafts = []; // unsaved custom goals
-
-/* ---------------- Load DB + Popular Goals ---------------- */
-
-function loadGoals() {
-  fetch("/api/goals/data/")
-    .then((res) => res.json())
-    .then((data) => {
-      popularGoals = data.popular;
-      customGoals = data.custom;
-      savedGoals = data.saved;
-
-      stagedSelectedIds = new Set(savedGoals.map((g) => g.id));
-
-      renderManageTab();
-      renderSavedTab();
-    })
-    .catch((err) => console.error("Failed loading goals:", err));
-}
-
-/* ---------------- Manage Tab Rendering ---------------- */
-
-function renderManageTab() {
-  const pop = document.getElementById("popularGoalsContainer");
-  const custom = document.getElementById("customGoalsContainer");
-
-  if (!pop || !custom) return;
-
-  pop.innerHTML = "";
-  custom.innerHTML = "";
-
-  // ✅ Popular
-  popularGoals.forEach((goal) => {
-    const isSelected = stagedSelectedIds.has(goal.id);
-
-    const div = document.createElement("div");
-    div.className = "col-12";
-    div.innerHTML = `
-      <div class="goal-item border rounded p-2 d-flex justify-content-between align-items-center">
-        <span>${goal.title}</span>
-        <button class="btn btn-sm ${
-          isSelected ? "btn-success" : "btn-outline-success"
-        } goal-select-btn" data-id="${goal.id}">
-          ${isSelected ? "Selected" : "Select"}
-        </button>
-      </div>
-    `;
-    pop.appendChild(div);
-  });
-
-  // ✅ Custom existing DB goals
-  customGoals.forEach((goal) => {
-    const isSelected = stagedSelectedIds.has(goal.id);
-
-    const div = document.createElement("div");
-    div.className = "col-12";
-    div.innerHTML = `
-      <div class="goal-item border rounded p-2 d-flex justify-content-between align-items-center">
-        <span>${goal.title}</span>
-        <button class="btn btn-sm ${
-          isSelected ? "btn-success" : "btn-outline-success"
-        } goal-select-btn" data-id="${goal.id}">
-          ${isSelected ? "Selected" : "Select"}
-        </button>
-      </div>
-    `;
-    custom.appendChild(div);
-  });
-
-  // ✅ Custom drafts (not DB yet)
-  stagedCustomDrafts.forEach((goal, index) => {
-    const div = document.createElement("div");
-    div.className = "col-12";
-    div.innerHTML = `
-      <div class="goal-item border rounded p-2 d-flex justify-content-between align-items-center">
-        <span>${goal.title} (custom)</span>
-        <button class="btn btn-sm btn-success" data-draft="${index}">
-          Selected
-        </button>
-      </div>
-    `;
-    custom.appendChild(div);
-  });
-
-  document.querySelectorAll(".goal-select-btn").forEach((btn) => {
-    btn.addEventListener("click", () => toggleStaging(btn.dataset.id, btn));
-  });
-}
-
-function toggleStaging(id, btn) {
-  const numericId = Number(id);
-
-  if (stagedSelectedIds.has(numericId)) {
-    stagedSelectedIds.delete(numericId);
-    btn.textContent = "Select";
-    btn.classList.remove("btn-success");
-    btn.classList.add("btn-outline-success");
-  } else {
-    stagedSelectedIds.add(numericId);
-    btn.textContent = "Selected";
-    btn.classList.remove("btn-outline-success");
-    btn.classList.add("btn-success");
-  }
-}
-
-/* ---------------- Custom Goal Creation ---------------- */
-
-function handleAddCustomGoal() {
-  const input = document.getElementById("newGoalText");
-  const type = document.getElementById("newGoalType");
-
-  const title = input.value.trim();
-  const goal_type = type.value;
-
-  if (!title) return;
-
-  stagedCustomDrafts.push({ title, goal_type });
-  stagedSelectedIds.add(`draft-${stagedCustomDrafts.length - 1}`);
-
-  input.value = "";
-  renderManageTab();
-}
-
-/* ---------------- Save Button — DB Write ---------------- */
-
-function saveGoalSelection() {
-  const ids = Array.from(stagedSelectedIds).filter(
-    (id) => typeof id === "number"
-  );
-
-  const customTitles = stagedCustomDrafts.map((g) => g.title);
-
-  const params = new URLSearchParams();
-  ids.forEach((id) => params.append("goal_ids[]", id));
-  customTitles.forEach((t) => params.append("custom_titles[]", t));
-
-  fetch("/api/goals/save-selection/", {
-    method: "POST",
-    headers: {
-      "X-CSRFToken": csrftoken,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: params.toString(),
-  })
-    .then((res) => res.json())
-    .then(() => {
-      stagedCustomDrafts = [];
-      loadGoals();
-    })
-    .catch((err) => console.error("Failed to save goals:", err));
-}
-
-/* ---------------- Saved Tab Rendering ---------------- */
-
-function renderSavedTab() {
-  const list = document.getElementById("savedGoalsList");
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  if (savedGoals.length === 0) {
-    list.innerHTML = `<p class="text-muted">No saved goals yet — add some above.</p>`;
+  if (!popularContainer || !customContainer || !savedList) {
     return;
   }
 
-  savedGoals.forEach((goal) => {
-    const item = document.createElement("div");
-    item.className =
-      "list-group-item bg-dark text-light d-flex justify-content-between align-items-center";
+  // -----------------------------
+  // CSRF helper
+  // -----------------------------
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+  }
+  const csrftoken = getCookie("csrftoken");
 
-    // ✅ Progress goals — slider
-    if (goal.goal_type === "progress") {
-      item.innerHTML = `
-        <strong>${goal.title}</strong>
+  // -----------------------------
+  // State
+  // -----------------------------
+  let POPULAR = [];
+  let CUSTOM = [];
+  let SAVED = [];
+
+  // -----------------------------
+  // Load from backend
+  // -----------------------------
+  async function loadGoals() {
+    try {
+      const res = await fetch("/api/goals/data/");
+      const data = await res.json();
+
+      POPULAR = data.popular || [];
+      CUSTOM = data.custom || [];
+      SAVED = data.saved || [];
+
+      renderPopular();
+      renderCustom();
+      renderSaved();
+    } catch (err) {
+      console.error("Error loading goals:", err);
+    }
+  }
+
+  // -----------------------------
+  // Render Popular Goals (ALL)
+  // -----------------------------
+  function renderPopular() {
+    popularContainer.innerHTML = "";
+
+    if (!POPULAR.length) {
+      popularContainer.innerHTML =
+        '<p class="text-muted">No popular goals available.</p>';
+      return;
+    }
+
+    POPULAR.forEach((g) => {
+      const col = document.createElement("div");
+      col.className = "col-6 col-md-4 mb-2";
+
+      // 🔥 FIXED: Button MUST reflect selected state!
+      col.innerHTML = `
+        <button class="btn w-100 goal-select ${
+          g.selected ? "btn-success" : "btn-outline-secondary"
+        }" data-id="${g.id}">
+          ${g.selected ? "✓ " : ""}${g.title}
+        </button>
+      `;
+
+      popularContainer.appendChild(col);
+    });
+  }
+
+  // -----------------------------
+  // Render Custom Goals (ALL)
+  // -----------------------------
+  function renderCustom() {
+    customContainer.innerHTML = "";
+
+    if (!CUSTOM.length) {
+      customContainer.innerHTML =
+        '<p class="text-muted">No custom goals yet — add one below.</p>';
+      return;
+    }
+
+    CUSTOM.forEach((g) => {
+      const col = document.createElement("div");
+      col.className = "col-6 col-md-4 mb-2";
+
+      // 🔥 FIXED: Selected → green + checkmark
+      col.innerHTML = `
+        <button class="btn w-100 goal-select ${
+          g.selected ? "btn-success" : "btn-outline-secondary"
+        }" data-id="${g.id}">
+          ${g.selected ? "✓ " : ""}${g.title}
+        </button>
+      `;
+
+      customContainer.appendChild(col);
+    });
+  }
+
+  // -----------------------------
+  // Render Saved Goals
+  // -----------------------------
+  function renderSaved() {
+    savedList.innerHTML = "";
+
+    if (!SAVED.length) {
+      const empty = document.createElement("div");
+      empty.className =
+        "list-group-item bg-transparent text-muted text-center border-secondary";
+      empty.textContent = "No saved goals yet — choose some on the first tab.";
+      savedList.appendChild(empty);
+      return;
+    }
+
+    const sorted = [...SAVED].sort((a, b) => a.order - b.order);
+
+    sorted.forEach((g, idx) => {
+      const row = document.createElement("div");
+      row.className =
+        "list-group-item bg-dark text-light d-flex justify-content-between align-items-center draggable-goal";
+      row.dataset.id = g.id;
+
+      if (idx < 5) row.classList.add("top-five-highlight");
+
+      let controlHtml = "";
+
+      if (g.goal_type === "progress") {
+        const progress = g.progress ?? 0;
+        controlHtml = `
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" min="0" max="100" step="10"
+                   value="${progress}"
+                   class="form-range goal-progress"
+                   data-id="${g.id}">
+            <span class="badge bg-info progress-label" data-id="${g.id}">
+              ${progress}%
+            </span>
+          </div>
+        `;
+      } else {
+        controlHtml = `
+          <div class="form-check me-2">
+            <input type="checkbox"
+                   class="form-check-input goal-check"
+                   data-id="${g.id}"
+                   ${g.completed ? "checked" : ""}>
+          </div>
+        `;
+      }
+
+      row.innerHTML = `
         <div class="d-flex align-items-center gap-2">
-          <input type="range" class="form-range saved-progress"
-            min="0" max="100" step="10"
-            value="${goal.progress}" data-id="${goal.id}">
-          <span class="progress-label">${goal.progress}%</span>
-          <button class="btn btn-sm btn-outline-danger goal-delete-btn" data-id="${goal.id}">✕</button>
+          <i class="bi bi-grip-vertical drag-handle me-1"></i>
+          <strong>${g.title}</strong>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          ${controlHtml}
+          <button class="btn btn-sm btn-outline-danger goal-delete" data-id="${g.id}">
+            <i class="bi bi-trash"></i>
+          </button>
         </div>
       `;
-    }
 
-    // ✅ Static — checkbox
-    else {
-      item.innerHTML = `
-        <div class="form-check d-flex align-items-center gap-2">
-          <input type="checkbox" class="form-check-input saved-goal-toggle"
-            data-id="${goal.id}" ${goal.completed ? "checked" : ""}>
-          <label class="form-check-label">${goal.title}</label>
-        </div>
-        <button class="btn btn-sm btn-outline-danger goal-delete-btn" data-id="${goal.id}">✕</button>
-      `;
-    }
+      savedList.appendChild(row);
+    });
 
-    list.appendChild(item);
+    enableDragAndDrop();
+  }
+
+  // -----------------------------
+  // Toggle selection
+  // -----------------------------
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".goal-select");
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    if (!id) return;
+
+    try {
+      await fetch(`/api/goals/toggle/${id}/`, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+      });
+
+      await loadGoals();
+    } catch (err) {
+      console.error("Error toggling goal selection:", err);
+    }
   });
 
-  // ✅ attach handlers
-  document.querySelectorAll(".saved-goal-toggle").forEach((cb) =>
-    cb.addEventListener("change", () => toggleGoalCompletion(cb.dataset.id))
-  );
+  // -----------------------------
+  // Add custom goal
+  // -----------------------------
+  const addBtn = document.getElementById("addCustomBtn");
+  const titleInput = document.getElementById("newGoalText");
+  const typeSelect = document.getElementById("newGoalType");
 
-  document.querySelectorAll(".saved-progress").forEach((slider) => {
-    slider.addEventListener(
-      "input",
-      () => (slider.nextElementSibling.textContent = `${slider.value}%`)
-    );
+  if (addBtn && titleInput && typeSelect) {
+    addBtn.addEventListener("click", async () => {
+      const title = titleInput.value.trim();
+      if (!title) return;
 
-    slider.addEventListener("change", () =>
-      updateGoalProgress(slider.dataset.id, slider.value)
-    );
+      const goalType = typeSelect.value || "static";
+
+      try {
+        await fetch("/api/goals/create/", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({ title, goal_type: goalType }),
+        });
+
+        titleInput.value = "";
+        await loadGoals();
+      } catch (err) {
+        console.error("Error creating goal:", err);
+      }
+    });
+  }
+
+  // -----------------------------
+  // Update progress
+  // -----------------------------
+  document.addEventListener("input", async (e) => {
+    const slider = e.target.closest(".goal-progress");
+    if (!slider) return;
+
+    const id = slider.dataset.id;
+    const progress = slider.value;
+
+    const label = savedList.querySelector(`.progress-label[data-id="${id}"]`);
+    if (label) label.textContent = `${progress}%`;
+
+    if (parseInt(progress) === 100 && typeof confetti === "function") {
+      confetti({ particleCount: 60, spread: 70 });
+    }
+
+    try {
+      await fetch(`/api/goals/progress/${id}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrftoken,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ progress }),
+      });
+    } catch (err) {
+      console.error("Error updating progress:", err);
+    }
   });
 
-  document.querySelectorAll(".goal-delete-btn").forEach((btn) =>
-    btn.addEventListener("click", () => deleteGoal(btn.dataset.id))
-  );
-}
+  // -----------------------------
+  // Toggle static goal completion
+  // -----------------------------
+  document.addEventListener("change", async (e) => {
+    const check = e.target.closest(".goal-check");
+    if (!check) return;
 
-/* ---------------- API Actions ---------------- */
+    const id = check.dataset.id;
+    const completed = check.checked ? "1" : "0";
 
-function toggleGoalCompletion(id) {
-  fetch(`/api/goals/toggle/${id}/`, {
-    method: "POST",
-    headers: { "X-CSRFToken": csrftoken },
-  }).catch((err) => console.error("Toggle failed:", err));
-}
+    try {
+      await fetch(`/api/goals/progress/${id}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrftoken,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ completed }),
+      });
+    } catch (err) {
+      console.error("Error toggling static goal:", err);
+    }
+  });
 
-function updateGoalProgress(id, value) {
-  const form = new FormData();
-  form.append("progress", value);
+  // -----------------------------
+  // Delete
+  // -----------------------------
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".goal-delete");
+    if (!btn) return;
 
-  fetch(`/api/goals/progress/${id}/`, {
-    method: "POST",
-    headers: { "X-CSRFToken": csrftoken },
-    body: form,
-  }).catch((err) => console.error("Progress update failed:", err));
-}
+    const id = btn.dataset.id;
+    if (!id) return;
 
-function deleteGoal(id) {
-  fetch(`/api/goals/delete/${id}/`, {
-    method: "POST",
-    headers: { "X-CSRFToken": csrftoken },
-  })
-    .then(() => loadGoals())
-    .catch((err) => console.error("Delete failed:", err));
-}
+    if (!confirm("Remove this goal? You can re-add it later.")) return;
+
+    try {
+      await fetch(`/api/goals/delete/${id}/`, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+      });
+
+      await loadGoals();
+    } catch (err) {
+      console.error("Error deleting goal:", err);
+    }
+  });
+
+  // -----------------------------
+  // Drag and drop reorder
+  // -----------------------------
+  function enableDragAndDrop() {
+    const rows = savedList.querySelectorAll(".draggable-goal");
+
+    rows.forEach((row) => {
+      row.draggable = true;
+
+      row.addEventListener("dragstart", () => {
+        row.classList.add("dragging");
+      });
+
+      row.addEventListener("dragend", async () => {
+        row.classList.remove("dragging");
+
+        const ids = [...savedList.querySelectorAll(".draggable-goal")].map(
+          (el) => el.dataset.id
+        );
+
+        try {
+          await fetch("/api/goals/reorder/", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": csrftoken,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams(ids.map((id) => ["order[]", id])),
+          });
+        } catch (err) {
+          console.error("Error reordering goals:", err);
+        }
+      });
+    });
+
+    savedList.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      const after = getDragAfterElement(savedList, e.clientY);
+      const dragging = savedList.querySelector(".dragging");
+      if (!dragging) return;
+
+      if (!after) savedList.appendChild(dragging);
+      else savedList.insertBefore(dragging, after);
+    });
+  }
+
+  function getDragAfterElement(container, y) {
+    const els = [...container.querySelectorAll(".draggable-goal:not(.dragging)")];
+    let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+
+    els.forEach((child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+
+      if (offset < 0 && offset > closest.offset) {
+        closest = { offset, element: child };
+      }
+    });
+
+    return closest.element;
+  }
+
+  // -----------------------------
+  // Save button glow
+  // -----------------------------
+  const saveBtn = document.getElementById("saveGoalsBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", async () => {
+      await loadGoals();
+      saveBtn.textContent = "Saved ✓";
+      setTimeout(() => (saveBtn.textContent = "Save Goals"), 1500);
+    });
+  }
+
+  // Initial load
+  loadGoals();
+});

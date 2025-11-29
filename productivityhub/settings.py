@@ -22,6 +22,8 @@ INSTALLED_APPS = [
     # Local apps
     'dashboard',
     'accounts.apps.AccountsConfig',
+    'projects',
+    'messaging',
 
 ]
 
@@ -50,6 +52,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'messaging.context_processors.messaging_unread_counts',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',

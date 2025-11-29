@@ -1,0 +1,25 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="fw-bold mb-3">Sent Messages</h3>
+
+  {% for m in messages %}
+    <div class="card dashboard-card p-3 mb-2">
+      <div class="d-flex justify-content-between">
+        <div>
+          <a href="{% url 'message_detail' m.id %}" class="text-decoration-none text-light">
+            <strong>{{ m.subject }}</strong>
+          </a>
+          <div class="text-muted small">
+            To: {{ m.recipient.username }} • {{ m.created_at|date:"Y-m-d H:i" }}
+          </div>
+        </div>
+
+        <a href="{% url 'message_delete' m.id %}" class="btn btn-sm btn-outline-warning">Trash</a>
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-muted">You haven’t sent any messages yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

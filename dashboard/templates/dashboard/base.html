@@ -8,6 +8,10 @@
 
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
 
   <!-- Main CSS -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
@@ -15,22 +19,128 @@
 </head>
 <body>
   <div class="d-flex">
-    <!-- Sidebar -->
-    <div class="sidebar d-flex flex-column">
-      <div class="user-sidebar">
-        <img src="{% static 'img/user.avif' %}" class="rounded-circle" width="60" height="60" alt="User">
-        <h3>User</h3>
+
+  <!-- Sidebar -->
+  <div class="sidebar d-flex flex-column">
+
+    <!-- User + Collapse Button -->
+    <div class="user-sidebar d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <img src="{% static 'img/user.avif' %}" class="rounded-circle user-avatar" width="60" height="60" alt="User">
+        <h3 class="ms-2 mb-0 user-name">User</h3>
       </div>
 
-      <nav class="nav flex-column mt-3">
-  <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Dashboard</a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'goals' %}active{% endif %}" href="{% url 'goals' %}"> Goals</a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}" href="{% url 'tasks' %}">Tasks</a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}"> Profile</a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'settings' %}">Settings</a>
-</nav>
-
+      <button id="sidebarToggle" class="btn btn-sm btn-outline-light sidebar-toggle">
+        <i class="bi bi-chevron-left"></i>
+      </button>
     </div>
+
+    <!-- Navigation -->
+    <nav class="nav flex-column mt-3 sidebar-nav">
+
+      <!-- Dashboard -->
+      <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+         href="{% url 'home' %}">
+        <i class="bi bi-speedometer2 nav-icon me-2"></i>
+        <span class="nav-text">Dashboard</span>
+      </a>
+
+      <!-- Goals -->
+      <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'goals' %}active{% endif %}"
+         href="{% url 'goals' %}">
+        <i class="bi bi-bullseye nav-icon me-2"></i>
+        <span class="nav-text">Goals</span>
+      </a>
+
+      <!-- Tasks -->
+      <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}"
+         href="{% url 'tasks' %}">
+        <i class="bi bi-check2-square nav-icon me-2"></i>
+        <span class="nav-text">Tasks</span>
+      </a>
+
+      <!-- Projects -->
+      <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'project_list' %}active{% endif %}"
+         href="{% url 'project_list' %}">
+        <i class="bi bi-kanban nav-icon me-2"></i>
+        <span class="nav-text">Projects</span>
+      </a>
+
+      <hr class="text-muted my-2" style="opacity:0.2;">
+
+      <!-- Messages Header -->
+      <button class="nav-link d-flex align-items-center justify-content-between sidebar-group-toggle"
+              type="button"
+              id="messagesToggle">
+
+        <span>
+          <i class="bi bi-envelope nav-icon me-2"></i>
+          <span class="nav-text">Messages</span>
+        </span>
+
+        <span class="d-flex align-items-center gap-2">
+          {% if inbox_unread_count %}
+            <span class="badge bg-danger rounded-pill inbox-badge">{{ inbox_unread_count }}</span>
+          {% endif %}
+          <i class="bi bi-chevron-down small chevron-icon"></i>
+        </span>
+      </button>
+
+      <!-- Messages submenu -->
+      <div id="messagesGroup" class="sidebar-submenu">
+        <a class="nav-link d-flex align-items-center sub-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}"
+           href="{% url 'inbox' %}">
+          <i class="bi bi-inbox nav-icon me-2"></i>
+          <span class="nav-text">Inbox</span>
+        </a>
+
+        <a class="nav-link d-flex align-items-center sub-link {% if request.resolver_match.url_name == 'sent_messages' %}active{% endif %}"
+           href="{% url 'sent_messages' %}">
+          <i class="bi bi-send nav-icon me-2"></i>
+          <span class="nav-text">Sent</span>
+        </a>
+
+        <a class="nav-link d-flex align-items-center sub-link {% if request.resolver_match.url_name == 'archived_messages' %}active{% endif %}"
+           href="{% url 'archived_messages' %}">
+          <i class="bi bi-archive nav-icon me-2"></i>
+          <span class="nav-text">Archived</span>
+        </a>
+
+        <a class="nav-link d-flex align-items-center sub-link {% if request.resolver_match.url_name == 'compose_message' %}active{% endif %}"
+           href="{% url 'compose_message' %}">
+          <i class="bi bi-pencil-square nav-icon me-2"></i>
+          <span class="nav-text">Compose</span>
+        </a>
+        <a class="nav-link d-flex align-items-center sub-link {% if request.resolver_match.url_name == 'trash' %}active{% endif %}"
+   href="{% url 'trash' %}">
+  <i class="bi bi-trash nav-icon me-2"></i>
+  <span class="nav-text">Trash</span>
+</a>
+
+      </div>
+
+      <hr class="text-muted my-2" style="opacity:0.2;">
+
+      <!-- Profile -->
+      <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+         href="{% url 'profile' %}">
+        <i class="bi bi-person-circle nav-icon me-2"></i>
+        <span class="nav-text">Profile</span>
+      </a>
+
+      <!-- Settings -->
+      <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'settings' %}active{% endif %}"
+         href="{% url 'settings' %}">
+        <i class="bi bi-gear nav-icon me-2"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content flex-grow-1">
+
 
     <!-- Main Content -->
     <div class="main-content flex-grow-1">
@@ -56,6 +166,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="{% static 'js/main.js' %}"></script>
   <script src="{% static 'js/dashboard.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 </body>
 </html>

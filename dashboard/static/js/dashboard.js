@@ -1,98 +1,167 @@
+// ============================
+// DASHBOARD-SPECIFIC JS
+// (tasks toggle + notes)
+// ============================
 document.addEventListener("DOMContentLoaded", () => {
-  // ✅ Correct CSRF cookie parser
-  function getCSRF() {
-    const name = "csrftoken=";
-    const decoded = decodeURIComponent(document.cookie);
-    const cookies = decoded.split("; ");
-
-    for (let c of cookies) {
-      if (c.startsWith(name)) return c.substring(name.length);
-    }
-    return "";
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
   }
+  const csrftoken = getCookie("csrftoken");
 
-  const csrftoken = getCSRF();
+  // 1️⃣ TASK TOGGLE (HOME CARD)
+  const taskList = document.getElementById("taskList");
 
- // ✅ Toggle task from dashboard with instant UI update
-document.querySelectorAll(".dashboard-task-toggle").forEach((checkbox) => {
-  checkbox.addEventListener("change", () => {
-    const id = checkbox.dataset.id;
-    const listItem = checkbox.closest("li");
-    const titleSpan = listItem.querySelector("span");
-    const badge = listItem.querySelector("span.badge");
+  if (taskList) {
+    taskList.addEventListener("change", (e) => {
+      const checkbox = e.target.closest(".dashboard-task-toggle");
+      if (!checkbox) return;
 
-    fetch(`/api/tasks/toggle/${id}/`, {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const completed = data.completed;
+      const id = checkbox.dataset.id;
+      if (!id) return;
 
-        // ✅ Update text styling instantly
+      const li = checkbox.closest("li");
+      const textSpan = li.querySelector("span");
+      const badge = li.querySelector(".badge");
+      const completed = checkbox.checked;
+
+      if (textSpan) {
         if (completed) {
-          titleSpan.classList.add("text-decoration-line-through", "text-muted");
+          textSpan.classList.add("text-decoration-line-through", "text-muted");
         } else {
-          titleSpan.classList.remove("text-decoration-line-through", "text-muted");
+          textSpan.classList.remove("text-decoration-line-through", "text-muted");
         }
+      }
 
-        // ✅ Update badge instantly
+      if (badge) {
         if (completed) {
-          badge.className = "badge bg-success";
           badge.textContent = "Done";
+          badge.classList.remove("bg-warning", "text-dark");
+          badge.classList.add("bg-success");
         } else {
-          badge.className = "badge bg-warning text-dark";
           badge.textContent = "Pending";
+          badge.classList.remove("bg-success");
+          badge.classList.add("bg-warning", "text-dark");
         }
-      })
-      .catch((err) => {
-        console.error("Task toggle failed:", err);
-        checkbox.checked = !checkbox.checked; // revert on failure
-      });
-  });
-});
+      }
 
-
-  // ✅ Local notes widget
-  const addNoteBtn = document.getElementById("addNoteBtn");
-  const noteInput = document.getElementById("noteInput");
-  const notesList = document.getElementById("notesList");
-
-  if (!addNoteBtn) return;
-
-  let notes = JSON.parse(localStorage.getItem("notes")) || [];
-
-  function renderNotes() {
-    notesList.innerHTML = "";
-    notes.forEach((note, index) => {
-      const li = document.createElement("li");
-      li.className = "list-group-item bg-dark text-light d-flex justify-content-between";
-      li.innerHTML = `
-        ${note}
-        <button class="btn btn-sm btn-danger" data-index="${index}">X</button>
-      `;
-      notesList.appendChild(li);
+      fetch(`/api/tasks/toggle/${id}/`, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+      }).catch((err) => console.error("Error toggling task:", err));
     });
   }
 
-  notesList.addEventListener("click", (e) => {
-    if (e.target.tagName === "BUTTON") {
-      notes.splice(e.target.dataset.index, 1);
-      localStorage.setItem("notes", JSON.stringify(notes));
-      renderNotes();
+  // 2️⃣ NOTES (DB-backed)
+  const notesList = document.getElementById("notesList");
+  const noteInput = document.getElementById("noteInput");
+  const addNoteBtn = document.getElementById("addNoteBtn");
+
+  if (notesList && noteInput && addNoteBtn) {
+    function renderNotes(notes) {
+      notesList.innerHTML = "";
+
+      if (!notes.length) {
+        const li = document.createElement("li");
+        li.className =
+          "list-group-item bg-transparent text-muted text-center border-secondary";
+        li.textContent = "No notes yet — add one above.";
+        notesList.appendChild(li);
+        return;
+      }
+
+      notes.forEach((n) => {
+        const li = document.createElement("li");
+        li.className =
+          "list-group-item bg-transparent text-light border-secondary d-flex justify-content-between align-items-center";
+
+        li.innerHTML = `
+          <div class="d-flex align-items-center">
+            <input type="checkbox"
+                   class="form-check-input me-2 note-toggle"
+                   data-id="${n.id}"
+                   ${n.completed ? "checked" : ""}>
+            <span class="${n.completed ? "text-decoration-line-through text-muted" : ""}">
+              ${n.text}
+            </span>
+          </div>
+          <button class="btn btn-sm btn-danger note-delete" data-id="${n.id}">X</button>
+        `;
+
+        notesList.appendChild(li);
+      });
     }
-  });
 
-  addNoteBtn.addEventListener("click", () => {
-    if (!noteInput.value.trim()) return;
-    notes.push(noteInput.value.trim());
-    localStorage.setItem("notes", JSON.stringify(notes));
-    noteInput.value = "";
-    renderNotes();
-  });
+    async function loadNotes() {
+      try {
+        const res = await fetch("/api/notes/list/");
+        const data = await res.json();
+        renderNotes(data.notes || []);
+      } catch (err) {
+        console.error("Error loading notes:", err);
+      }
+    }
 
-  renderNotes();
+    addNoteBtn.addEventListener("click", async () => {
+      const text = noteInput.value.trim();
+      if (!text) return;
+
+      try {
+        await fetch("/api/notes/create/", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({ text }),
+        });
+        noteInput.value = "";
+        loadNotes();
+      } catch (err) {
+        console.error("Error creating note:", err);
+      }
+    });
+
+    noteInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addNoteBtn.click();
+      }
+    });
+
+    notesList.addEventListener("click", async (e) => {
+      const toggle = e.target.closest(".note-toggle");
+      const delBtn = e.target.closest(".note-delete");
+
+      if (toggle) {
+        const id = toggle.dataset.id;
+        try {
+          await fetch(`/api/notes/toggle/${id}/`, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+          });
+          loadNotes();
+        } catch (err) {
+          console.error("Error toggling note:", err);
+        }
+        return;
+      }
+
+      if (delBtn) {
+        const id = delBtn.dataset.id;
+        try {
+          await fetch(`/api/notes/delete/${id}/`, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+          });
+          loadNotes();
+        } catch (err) {
+          console.error("Error deleting note:", err);
+        }
+      }
+    });
+
+    loadNotes();
+  }
 });

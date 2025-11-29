@@ -1,0 +1,22 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="fw-bold mb-3">Archived</h3>
+
+  {% for m in messages %}
+    <div class="card dashboard-card p-3 mb-2">
+      <a href="{% url 'message_detail' m.id %}" class="text-light"><strong>{{ m.subject }}</strong></a>
+      <div class="text-muted small">
+        {% if m.sender == request.user %}
+          Sent → {{ m.recipient.username }}
+        {% else %}
+          From {{ m.sender.username }}
+        {% endif %}
+        • {{ m.created_at|date:"Y-m-d H:i" }}
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-muted">No archived messages.</p>
+  {% endfor %}
+</div>
+{% endblock %}

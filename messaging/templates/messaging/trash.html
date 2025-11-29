@@ -1,0 +1,23 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="fw-bold mb-3">Trash</h3>
+
+  {% for m in messages %}
+    <div class="card dashboard-card p-3 mb-2">
+      <strong>{{ m.subject }}</strong><br>
+      <div class="text-muted small mb-2">
+        {% if m.sender == request.user %}
+          Sent → {{ m.recipient.username }}
+        {% else %}
+          From {{ m.sender.username }}
+        {% endif %}
+      </div>
+
+      <a href="{% url 'message_restore' m.id %}" class="btn btn-sm btn-outline-light">Restore</a>
+    </div>
+  {% empty %}
+    <p class="text-muted">Trash is empty.</p>
+  {% endfor %}
+</div>
+{% endblock %}
