@@ -1,7 +1,6 @@
-// ============================
-// DASHBOARD-SPECIFIC JS
-// (tasks toggle + notes)
-// ============================
+// static/js/dashboard.js
+// DASHBOARD-SPECIFIC JS (tasks card + notes)
+
 document.addEventListener("DOMContentLoaded", () => {
   function getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -46,10 +45,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Persist to backend
       fetch(`/api/tasks/toggle/${id}/`, {
         method: "POST",
         headers: { "X-CSRFToken": csrftoken },
-      }).catch((err) => console.error("Error toggling task:", err));
+      })
+        .then(() => {
+          // 🔔 Tell main.js to update the weekly chart
+          document.dispatchEvent(new CustomEvent("dashboardTasksChanged"));
+        })
+        .catch((err) => console.error("Error toggling task:", err));
     });
   }
 

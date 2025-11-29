@@ -456,7 +456,7 @@ def notes_list(request):
 @login_required
 @require_POST
 def note_create(request):
-    text = request.POST.get("text", "").trim()
+    text = request.POST.get("text", "").strip()   # <-- FIXED: strip(), not trim()
     if not text:
         return HttpResponseBadRequest("text required")
 
@@ -467,6 +467,7 @@ def note_create(request):
     )
 
     return JsonResponse({"ok": True, "note": _note_to_dict(note)})
+
 
 
 @login_required

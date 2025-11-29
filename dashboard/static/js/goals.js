@@ -21,6 +21,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   const csrftoken = getCookie("csrftoken");
 
+  // Optional hook if you ever want cross-page updates
+  function emitProgressUpdate() {
+    document.dispatchEvent(new CustomEvent("goalProgressChanged"));
+  }
+
   // -----------------------------
   // State
   // -----------------------------
@@ -64,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const col = document.createElement("div");
       col.className = "col-6 col-md-4 mb-2";
 
-      // 🔥 FIXED: Button MUST reflect selected state!
       col.innerHTML = `
         <button class="btn w-100 goal-select ${
           g.selected ? "btn-success" : "btn-outline-secondary"
@@ -93,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const col = document.createElement("div");
       col.className = "col-6 col-md-4 mb-2";
 
-      // 🔥 FIXED: Selected → green + checkmark
       col.innerHTML = `
         <button class="btn w-100 goal-select ${
           g.selected ? "btn-success" : "btn-outline-secondary"
@@ -257,6 +260,8 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: new URLSearchParams({ progress }),
       });
+
+      emitProgressUpdate();
     } catch (err) {
       console.error("Error updating progress:", err);
     }
@@ -281,6 +286,8 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: new URLSearchParams({ completed }),
       });
+
+      emitProgressUpdate();
     } catch (err) {
       console.error("Error toggling static goal:", err);
     }
