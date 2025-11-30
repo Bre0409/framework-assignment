@@ -1,17 +1,17 @@
-// ============================
-// MAIN DASHBOARD SCRIPT
-// ============================
+// static/js/main.js
+
 document.addEventListener("DOMContentLoaded", () => {
   const body = document.body;
   const toggleBtn = document.getElementById("themeToggle");
   const dateSpan = document.getElementById("currentDate");
   const banner = document.getElementById("motivationBanner");
+  let weeklyChart = null;
 
   // ----------------------------
-  // 1️⃣ Display Current Date
+  // 1. Current Date
   // ----------------------------
-  const today = new Date();
   if (dateSpan) {
+    const today = new Date();
     dateSpan.textContent = today.toLocaleDateString("en-US", {
       weekday: "long",
       month: "short",
@@ -20,16 +20,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ----------------------------
-  // 2️⃣ Theme Toggle (Dark ↔ Light)
+  // 2. Theme Toggle
   // ----------------------------
   if (toggleBtn) {
-    // Load user’s last saved theme
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "light") {
       body.classList.add("light-mode");
       toggleBtn.textContent = "🌞";
-      toggleBtn.classList.remove("btn-outline-light");
-      toggleBtn.classList.add("btn-outline-dark");
+      toggleBtn.classList.replace("btn-outline-light", "btn-outline-dark");
     }
 
     toggleBtn.addEventListener("click", () => {
@@ -43,94 +41,189 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ----------------------------
-  // 3️⃣ Progress Rings
+  // 3. Progress Rings on Home
   // ----------------------------
   const rings = document.querySelectorAll(".progress-ring.small");
+
   rings.forEach((ring) => {
-    const value = parseInt(ring.dataset.value, 10);
+    const value = parseInt(ring.dataset.value || "0", 10);
     const circle = ring.querySelector(".progress-ring-fill");
+    if (!circle) return;
+
     const radius = circle.r.baseVal.value;
     const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (value / 100) * circumference;
+    const clamped = Math.max(0, Math.min(100, value));
+    const offset = circumference - (clamped / 100) * circumference;
 
-    // Base styling
     circle.style.strokeDasharray = `${circumference} ${circumference}`;
     circle.style.strokeDashoffset = circumference;
 
-    // Animate stroke offset
-    setTimeout(() => {
-      circle.style.strokeDashoffset = offset;
-    }, 300);
+    setTimeout(() => (circle.style.strokeDashoffset = offset), 250);
 
-    // Color logic
-    if (value >= 90) {
-      circle.style.stroke = "#00ff88"; // Green for success
-      ring.classList.add("complete");
-    } else if (value >= 70) {
-      circle.style.stroke = "#00b4ff"; // Blue
-    } else {
-      circle.style.stroke = "#ff4d4d"; // Red for low
-    }
+    // Colors
+    circle.style.stroke =
+      clamped >= 90 ? "#00ff88" : clamped >= 70 ? "#00b4ff" : "#ff4d4d";
+
+    const textEl = ring.querySelector(".progress-ring-text");
+    if (textEl) textEl.textContent = `${clamped}%`;
   });
 
   // ----------------------------
-  // 4️⃣ Motivation Banner Cycle
+  // 4. Motivation Banner
   // ----------------------------
-  const messages = [
-    "Keep pushing forward — your consistency is paying off! 💪",
-    "Small progress is still progress. 🌱",
-    "You’re doing amazing — stay focused! 🚀",
-    "Remember why you started. 💭",
-  ];
-  let msgIndex = 0;
   if (banner) {
+    const messages = [
+      "Keep pushing forward — your consistency is paying off! 💪",
+      "Small progress is still progress. 🌱",
+      "You’re doing amazing — stay focused! 🚀",
+      "Remember why you started. 💭",
+    ];
+    let idx = 0;
     setInterval(() => {
-      msgIndex = (msgIndex + 1) % messages.length;
-      banner.textContent = messages[msgIndex];
+      idx = (idx + 1) % messages.length;
+      banner.textContent = messages[idx];
     }, 6000);
   }
 
   // ----------------------------
-  // 5️⃣ Chart.js (Weekly Trend)
+  // 5. Sidebar Collapse (main sidebar)
+  // ----------------------------
+  const sidebar = document.querySelector(".sidebar");
+  const sidebarToggle = document.getElementById("sidebarToggle");
+
+  if (sidebar && sidebarToggle) {
+    if (localStorage.getItem("sidebarCollapsed") === "1") {
+      sidebar.classList.add("collapsed");
+    }
+
+    sidebarToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+      localStorage.setItem(
+        "sidebarCollapsed",
+        sidebar.classList.contains("collapsed") ? "1" : "0"
+      );
+    });
+  }
+
+  // ----------------------------
+// Messaging Sidebar Toggle (Final Working Version)
+// ----------------------------
+const messagesToggle = document.getElementById("messagesToggle");
+const messagesGroup = document.getElementById("messagesGroup");
+
+if (messagesToggle && messagesGroup) {
+    messagesToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        // Toggle the CSS class controlling visibility
+        messagesGroup.classList.toggle("show");
+
+        // Rotate the chevron icon
+        const chevron = messagesToggle.querySelector(".chevron-icon");
+        if (chevron) {
+            chevron.classList.toggle("open");
+        }
+    });
+}
+
+  // ----------------------------
+  // 7. Weekly Chart Helpers
+  // ----------------------------
+  function todayIndex() {
+    return (new Date().getDay() + 6) % 7; // Monday = 0
+  }
+
+  function getTaskPercent() {
+    const list = document.getElementById("taskList");
+    if (!list) return 0;
+
+    const boxes = list.querySelectorAll(".dashboard-task-toggle");
+    if (!boxes.length) return 0;
+
+    let done = 0;
+    boxes.forEach((b) => {
+      if (b.checked) done++;
+    });
+
+    return Math.round((done / boxes.length) * 100);
+  }
+
+  function getGoalPercent() {
+    const rings = document.querySelectorAll(".progress-ring.small");
+    if (!rings.length) return 0;
+
+    let total = 0;
+    rings.forEach((r) => {
+      total += parseInt(r.dataset.value || "0", 10);
+    });
+
+    return Math.round(total / rings.length);
+  }
+
+  function updateWeeklyChart() {
+    if (!weeklyChart) return;
+
+    const idx = todayIndex();
+    weeklyChart.data.datasets[0].data[idx] = getGoalPercent();
+    weeklyChart.data.datasets[1].data[idx] = getTaskPercent();
+    weeklyChart.update();
+  }
+
+  // Events from dashboard.js + goals.js
+  document.addEventListener("goalProgressChanged", updateWeeklyChart);
+  document.addEventListener("dashboardTasksChanged", updateWeeklyChart);
+
+  // ----------------------------
+  // 8. Weekly Chart Creation
   // ----------------------------
   const ctx = document.getElementById("progressChart");
-  if (ctx) {
-    new Chart(ctx, {
+  if (ctx && window.Chart) {
+    if (ctx._weeklyChartInstance) ctx._weeklyChartInstance.destroy();
+
+    weeklyChart = new Chart(ctx, {
       type: "bar",
       data: {
         labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         datasets: [
           {
-            label: "Progress %",
-            data: [65, 80, 70, 90, 75, 85, 95],
-            borderRadius: 6,
-            backgroundColor: (ctx) => {
-              const index = ctx.dataIndex;
-              const value = ctx.dataset.data[index];
-              if (value >= 90) return "#00ff88";
-              if (value >= 70) return "#00b4ff";
-              return "#ff4d4d";
-            },
+            label: "Goals %",
+            data: [0, 0, 0, 0, 0, 0, 0],
+            borderRadius: 8,
+            backgroundColor: "#00b4ff",
+          },
+          {
+            label: "Tasks %",
+            data: [0, 0, 0, 0, 0, 0, 0],
+            borderRadius: 8,
+            backgroundColor: "#00ff88",
           },
         ],
       },
       options: {
+        plugins: {
+          legend: {
+            labels: { color: "#ccc" },
+          },
+        },
         scales: {
           y: {
             beginAtZero: true,
             max: 100,
             ticks: { color: "#ccc" },
-            grid: { color: "rgba(255,255,255,0.05)" },
+            grid: { color: "rgba(255,255,255,0.1)" },
           },
           x: {
             ticks: { color: "#ccc" },
-            grid: { color: "transparent" },
+            grid: { display: false },
           },
         },
-        plugins: { legend: { display: false } },
         responsive: true,
         maintainAspectRatio: false,
       },
     });
+
+    ctx._weeklyChartInstance = weeklyChart;
+
+    updateWeeklyChart();
   }
 });

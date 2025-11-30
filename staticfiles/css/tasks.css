@@ -1,0 +1,19 @@
+.task-item {
+  background-color: #1b2130;
+  color: #e6f1ff;
+  transition: all 0.3s ease;
+  border: #e6f1ff solid 2px;
+}
+.task-item:hover {
+  background-color: #232a3a;
+}
+body.light-mode .task-item {
+  background-color: #ffffff;
+  color: #212529;
+}
+.remove-task {
+  visibility: hidden;
+}
+.task-item:hover .remove-task {
+  visibility: visible;
+}

@@ -1,342 +1,396 @@
-/* ==================================== */
-/* BASE STRUCTURE                      */
-/* ==================================== */
+/* ----------------------------- */
+/* BASE */
+/* ----------------------------- */
 body {
   font-family: 'Poppins', sans-serif;
   background-color: #0e1217;
   color: #e6f1ff;
-  margin: 0;
-  transition: background-color 0.4s ease, color 0.4s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
 }
 
-h2, h3 {
-  font-weight: 700;
-  letter-spacing: 0.3px;
-}
-
-/* ==================================== */
-/* SIDEBAR                              */
-/* ==================================== */
+/* ----------------------------- */
+/* SIDEBAR */
+/* ----------------------------- */
 .sidebar {
+  width: 340px;
   height: 100vh;
-  width: 240px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background-color: #121820;
-  color: #e6f1ff;
-  padding: 25px 20px;
-  transition: background-color 0.4s ease, color 0.4s ease;
-}
-
-.user-sidebar {
+  background: #11151c;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 28px 20px;
   display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 30px;
+  flex-direction: column;
+  font-size: 25px;
 }
 
-.user-sidebar img {
-  border: 2px solid #00b4ff;
+.nav-link {
+  
+  color: #7e8895;
+  padding: 10px 8px;
+  border-radius: 8px;
+  transition: background 0.25s, color 0.25s, transform 0.2s;
 }
 
-.sidebar h3 {
-  font-size: 1.3rem;
-  font-weight: 600;
+.nav-link.active, .nav-link:hover {
+  background: rgba(255,255,255,0.06);
   color: #fff;
+  transform: translateX(4px);
+}
+:root {
+  --accent: #3a8bff;
+}
+.btn,
+.progress-ring-fill {
+  color: var(--accent);
+  stroke: var(--accent);
 }
 
-.sidebar .nav-link {
-  color: #7a7a7a;
-  font-weight: 500;
-  margin-bottom: 12px;
-  font-size: 1rem;
-  transition: color 0.3s, transform 0.3s;
-}
 
-.sidebar .nav-link:hover,
-.sidebar .nav-link.active {
-  color: #00b4ff;
-  transform: translateX(5px);
-}
-
-/* ==================================== */
-/* MAIN CONTENT                         */
-/* ==================================== */
+/* ----------------------------- */
+/* MAIN CONTENT */
+/* ----------------------------- */
 .main-content {
-  margin-left: 260px;
+  margin-left: 20px;
+  margin-right: 20px;
   padding: 40px;
-  transition: margin-left 0.3s;
 }
 
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
-  gap: 25px;
-}
-
-/* ==================================== */
-/* CARD STYLING                         */
-/* ==================================== */
+/* ----------------------------- */
+/* CARDS */
+/* ----------------------------- */
 .card {
-  background-color: #1b2130;
+  background: #161b24;
+  border-radius: 18px;
   border: none;
-  border-radius: 14px;
-  padding: 25px;
+  padding: 24px;
   color: #e6f1ff;
-  transition: background-color 0.4s ease, color 0.4s ease, box-shadow 0.3s;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  transition: transform 0.2s ease;
 }
 
 .card:hover {
-  box-shadow: 0 0 15px rgba(0, 180, 255, 0.15);
+  transform: translateY(-3px);
 }
 
-.card h3 {
-  margin-bottom: 20px;
-  font-size: 1.3rem;
+.sidebar,
+.navbar {
+  background: #11161f;
+  /* border: none; */
+  /* width: 400px; */
+  
 }
 
-/* ==================================== */
-/* TASKS                                */
-/* ==================================== */
-.list-group-item {
-  background: transparent;
-  color: #e6f1ff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
-.list-group-item input[type="checkbox"] {
-  transform: scale(1.2);
-  cursor: pointer;
-  accent-color: #00b4ff;
-  transition: accent-color 0.3s;
-}
+/* ----------------------------- */
+/* PROGRESS RINGS (Home Dashboard) */
+/* ----------------------------- */
 
-/* LIGHT MODE TASK ICON FIX */
-body.light-mode .list-group-item input[type="checkbox"] {
-  accent-color: #0d6efd;
-}
-
-/* ==================================== */
-/* GOALS + PROGRESS RINGS               */
-/* ==================================== */
-.goal-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.goal-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(27, 33, 48, 1);
-  padding: 10px 14px;
-  border-radius: 10px;
-  transition: background 0.3s;
-}
-
-.goal-item:hover {
-  background: #232a3a;
-}
-
-/* LIGHT MODE GOAL FIX */
-body.light-mode .goal-item {
-  background-color: #ffffff;
-  border: 1px solid #e6e6e6;
-}
-
-body.light-mode .goal-item:hover {
-  background-color: #f2f2f2;
-}
-
-.goal-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.goal-title {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.goal-sub {
-  font-size: 0.8rem;
-  color: rgba(230, 241, 255, 0.6);
-}
-
-/* Progress Rings (small) */
 .progress-ring.small {
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 35px;
+  height: 35px;
   flex-shrink: 0;
 }
 
 .progress-ring.small svg {
   transform: rotate(-90deg);
-  width: 42px;
-  height: 42px;
+  width: 35px;
+  height: 35px;
 }
 
 .progress-ring-bg {
   fill: none;
-  stroke: #2c3547;
-  stroke-width: 6;
+  stroke: #1f2a3a;
+  stroke-width: 4;
 }
 
 .progress-ring-fill {
   fill: none;
-  stroke-width: 6;
+  stroke-width: 4;
   stroke-linecap: round;
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
-  transition: stroke-dashoffset 1.2s ease-out, stroke 0.3s ease;
+  transition: stroke-dashoffset 0.6s ease, stroke 0.3s ease;
 }
 
-.progress-text {
+.progress-ring-text {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 0.7rem;
+  font-size: 0.55rem;
   font-weight: 600;
   color: #e6f1ff;
+  opacity: 0.9;
 }
 
-/* LIGHT MODE RING TEXT FIX */
-body.light-mode .progress-text {
+/* Color logic depending on progress */
+.progress-ring[data-value^="8"],
+.progress-ring[data-value^="9"],
+.progress-ring[data-value="100"] .progress-ring-fill {
+  stroke: #00ff88;
+}
+
+.progress-ring[data-value^="5"],
+.progress-ring[data-value^="6"],
+.progress-ring[data-value^="7"] .progress-ring-fill {
+  stroke: #00b4ff;
+}
+
+.progress-ring[data-value^="1"],
+.progress-ring[data-value^="2"],
+.progress-ring[data-value^="3"],
+.progress-ring[data-value^="4"] .progress-ring-fill {
+  stroke: #ff4d4d;
+}
+
+/* ----------------------------- */
+/* LIGHT MODE */
+/* ----------------------------- */
+body.light-mode {
+  background: #f8f9fa;
+  color: #212529;
+}
+body.light-mode .card {
+  background: #fff;
   color: #212529;
 }
 
-/* Pulse glow for complete rings */
-@keyframes pulseGlow {
-  0% {
-    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 8px 4px rgba(0, 255, 136, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
-  }
-}
-
-.progress-ring.complete {
-  animation: pulseGlow 2s infinite;
-  border-radius: 50%;
-}
-
-/* ==================================== */
-/* BUTTONS                              */
-/* ==================================== */
-.btn-primary {
-  background-color: #00b4ff;
-  border: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  background-color: #0090cc;
-}
-
-.btn-outline-light {
-  border-color: #00b4ff;
-  color: #00b4ff;
-}
-
-.btn-outline-light:hover {
-  background-color: #00b4ff;
-  color: black;
-}
-
-.btn-outline-danger {
-  border: none;
-  color: #ff4d4d;
-}
-
-/* ==================================== */
-/* MOTIVATION BANNER                    */
-/* ==================================== */
+/* ----------------------------- */
+/* FOOTER BANNER */
+/* ----------------------------- */
 .motivation-banner {
   position: fixed;
   bottom: 0;
   width: 100%;
-  background-color: #0e1217;
-  color: #fff;
+  background: #0e1217;
+  color: white;
   text-align: center;
-  padding: 8px 0;
+  padding: 6px;
   font-weight: 500;
   letter-spacing: 0.4px;
-  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* ==================================== */
-/* LIGHT MODE                           */
-/* ==================================== */
-body.light-mode {
-  background-color: #fdfdfd;
-  color: #212529;
+.container-fluid {
+  padding-left: 0;
+  padding-right: 0;
 }
 
-body.light-mode .sidebar {
-  background-color: #ffffff;
-  color: #212529;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+.row.g-4 > [class*='col-'] {
+  display: flex;
 }
 
-body.light-mode .card {
-  background-color: #ffffff;
-  border: 1px solid #e6e6e6;
-  color: #212529;
+.card {
+  flex: 1; /* all cards stretch evenly */
 }
 
-body.light-mode .list-group-item {
-  background-color: #ffffff;
-  border-color: #e0e0e0;
-  color: #212529;
+h4 {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+#popularGoalsContainer{
+  background-color: #161b24;
+  color: white;
+}
+/* -----------------------------
+   GOAL PILL (selectable)
+   ----------------------------- */
+.goal-pill {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s;
+  color: #e6f1ff;
+  user-select: none;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.goal-pill:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+.goal-pill.active {
+  background: #00b4ff;
+  border-color: #00b4ff;
+  color: #072233;
+  box-shadow: 0 6px 18px rgba(0,180,255,0.12);
 }
 
-body.light-mode .motivation-banner {
-  background-color: #ffffff;
-  color: #000000;
-  border-top: 1px solid #e6e6e6;
+/* small-range for saved goals */
+.small-range { height: 28px; }
+
+/* drag-handle (small area to start drag) */
+.drag-handle {
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.02);
+  color: #aeb8c8;
+  transition: background 0.15s;
+}
+.drag-handle:active { cursor: grabbing; background: rgba(255,255,255,0.04); }
+
+/* dragging visual */
+.list-group-item.dragging { opacity: 0.6; transform: scale(0.995); }
+
+/* saved goals buttons styling small tweaks */
+.list-group-item .btn { padding: 4px 8px; font-size: 0.78rem; }
+
+/* small helper for the drag handle text in description */
+.drag-handle-indicator { font-weight: 700; color: #aeb8c8; }
+
+/* make sure goal-pill fits grid */
+#popularGoalsContainer .col-6, #customGoalsContainer .col-6 { display: flex; }
+#popularGoalsContainer .goal-pill, #customGoalsContainer .goal-pill { width: 100%; }
+
+/* ensure sliders are touch friendly */
+input[type="range"] { touch-action: pan-x; -webkit-appearance: none; }
+
+/* minor saved goals gap */
+#savedGoalsList .list-group-item { display: flex; justify-content: space-between; align-items: center; }
+
+.top-five-highlight {
+  border: 2px solid gold !important;
+  background: rgba(255, 215, 0, 0.15) !important;
+}
+/* FORCE project link hover styling */
+.dashboard-card a.project-link {
+    color: #e0e0e0 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
 }
 
-/* Buttons in light mode */
-body.light-mode .btn-outline-light {
-  border-color: #0d6efd;
-  color: #0d6efd;
+.dashboard-card a.project-link:hover {
+    color: #ffffff !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px;
+    filter: brightness(1.2) !important;
+}
+/* ============================= */
+/* SIDEBAR ENHANCEMENTS          */
+/* ============================= */
+
+/* Avatar + header */
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
 }
 
-body.light-mode .btn-outline-light:hover {
-  background-color: #0d6efd;
-  color: #fff;
+.user-name {
+  font-size: 1.2rem;
 }
 
-/* ==================================== */
-/* RESPONSIVE                           */
-/* ==================================== */
+/* Sidebar collapse behaviour */
+.sidebar {
+  transition: width 0.2s ease, padding 0.2s ease;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Hide text when collapsed */
+.sidebar.collapsed .user-name,
+.sidebar.collapsed .nav-text {
+  display: none;
+}
+
+/* Center icons when collapsed */
+.sidebar.collapsed .nav-link {
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-toggle i {
+  transform: rotate(180deg);
+}
+
+/* Toggle button */
+.sidebar-toggle {
+  padding: 4px 6px;
+}
+
+/* Nav icons animation */
+.nav-icon {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.nav-link:hover .nav-icon {
+  transform: translateX(2px);
+}
+
+/* Messages group */
+.sidebar-group-toggle {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar-group-toggle:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Chevron rotation */
+.sidebar-group-toggle .chevron-icon {
+  transition: transform 0.2s ease;
+}
+
+.sidebar-group-toggle.open .chevron-icon {
+  transform: rotate(180deg);
+}
+
+/* Submenu collapse */
+.sidebar-submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease;
+}
+
+.sidebar-submenu.show {
+  max-height: 400px; /* enough to show all items */
+}
+
+/* Submenu visual indent */
+.sidebar-submenu .sub-link {
+  padding-left: 2.5rem;
+  font-size: 0.95rem;
+}
+
+/* Unread badge */
+.inbox-badge {
+  font-size: 0.7rem;
+  min-width: 22px;
+  text-align: center;
+}
+/* Increase collapsed sidebar width by 10px */
+.sidebar.collapsed {
+    width: 100px !important;
+}
+
+/* ----------------------------- */
+/* RESPONSIVE */
+/* ----------------------------- */
 @media (max-width: 768px) {
   .sidebar {
     position: relative;
     height: auto;
     width: 100%;
-    box-shadow: none;
   }
-
   .main-content {
     margin-left: 0;
+    padding: 20px;
   }
-
-  .dashboard-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
+  
 }
