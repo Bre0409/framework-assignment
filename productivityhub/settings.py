@@ -78,7 +78,12 @@ ROOT_URLCONF = 'productivityhub.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ BASE_DIR / 'dashboard' / 'templates' ],
+        
+        'DIRS': [
+    BASE_DIR / 'dashboard' / 'templates',
+    BASE_DIR / 'accounts' / 'templates',
+],
+
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
