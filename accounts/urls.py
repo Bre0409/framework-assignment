@@ -10,7 +10,7 @@ urlpatterns = [
     path("activate/<uidb64>/<token>/", views.activate_account, name="activate"),
 
     # ------------------------
-    # Login / Logout
+    # Login
     # ------------------------
     path(
         "login/",
@@ -21,12 +21,10 @@ urlpatterns = [
         name="login",
     ),
 
-    # FIXED LOGOUT
-    path(
-        "logout/",
-        auth_views.LogoutView.as_view(next_page="login"),
-        name="logout",
-    ),
+    # ------------------------
+    # FIXED LOGOUT (GET allowed)
+    # ------------------------
+    path("logout/", views.logout_view, name="logout"),
 
     # ------------------------
     # Password Reset Workflow
