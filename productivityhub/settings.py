@@ -13,11 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECRET KEY
 # =========================================================
 
-SECRET_KEY = os.environ.get(
-    SECRET_KEY = 'your-secret-key-here'  
-DEBUG = True
-)
-
+SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here")
 
 # =========================================================
 # PRODUCTION DETECTION (Render)
