@@ -2,7 +2,7 @@ services:
   - type: web
     name: productivityhub
     env: python
-    pythonVersion: 3.11
+    pythonVersion: 3.10.12
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn productivityhub.wsgi:application"
     autoDeploy: true
