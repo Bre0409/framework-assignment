@@ -1,4 +1,3 @@
-# accounts/urls.py
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
@@ -22,7 +21,12 @@ urlpatterns = [
         name="login",
     ),
 
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    # FIXED LOGOUT
+    path(
+        "logout/",
+        auth_views.LogoutView.as_view(next_page="login"),
+        name="logout",
+    ),
 
     # ------------------------
     # Password Reset Workflow
@@ -62,7 +66,7 @@ urlpatterns = [
     ),
 
     # ------------------------
-    # Profile (edit user info)
+    # Profile
     # ------------------------
     path("profile/", views.profile_view, name="profile"),
 ]
