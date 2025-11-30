@@ -29,6 +29,7 @@ DEBUG = not PRODUCTION
 if PRODUCTION:
     ALLOWED_HOSTS = [
         ".onrender.com",
+        "productivityhub.onrender.com",
         "localhost",
         "127.0.0.1",
     ]
@@ -60,7 +61,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Whitenoise must be here
+
+    # Serve static files in production
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -74,17 +78,23 @@ MIDDLEWARE = [
 # =========================================
 
 ROOT_URLCONF = 'productivityhub.urls'
+WSGI_APPLICATION = 'productivityhub.wsgi.application'
+
+# =========================================
+# TEMPLATES
+# =========================================
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         
         'DIRS': [
-    BASE_DIR / 'dashboard' / 'templates',
-    BASE_DIR / 'accounts' / 'templates',
-],
+            BASE_DIR / 'dashboard' / 'templates',
+            BASE_DIR / 'accounts' / 'templates',
+        ],
 
         'APP_DIRS': True,
+
         'OPTIONS': {
             'context_processors': [
                 'messaging.context_processors.messaging_unread_counts',
@@ -97,12 +107,11 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'productivityhub.wsgi.application'
-
 # =========================================
 # DATABASES
 # =========================================
 
+# Default local database (ignored in production)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -114,6 +123,7 @@ DATABASES = {
     }
 }
 
+# Render PostgreSQL
 if PRODUCTION and os.environ.get("DATABASE_URL"):
     DATABASES["default"] = dj_database_url.parse(
         os.environ["DATABASE_URL"],
@@ -130,37 +140,45 @@ LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
 
 # =========================================
-# SECURITY FOR RENDER (FREE TIER)
+# PROXY / SSL / CSRF — REQUIRED FOR RENDER
 # =========================================
 
 if PRODUCTION:
-    # allow HTTPS through Render proxy
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-    # IMPORTANT:
-    # Render free tier does NOT support end-to-end HTTPS → secure cookies FAIL
+    # Honor HTTPS from Render proxy
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    # Required or login POST will fail!
+    CSRF_TRUSTED_ORIGINS = [
+        "https://*.onrender.com",
+        "https://productivityhub.onrender.com",
+    ]
+
+    USE_X_FORWARDED_HOST = True
+
+    # Render free-tier does not support end-to-end HTTPS
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 
-    # no HSTS on free tier
     SECURE_HSTS_SECONDS = 0
+
 else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 
 # =========================================
-# STATIC FILES
+# STATIC FILES (Whitenoise)
 # =========================================
 
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'dashboard' / 'static'
+    BASE_DIR / 'dashboard' / 'static',
 ]
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
